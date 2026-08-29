@@ -30,10 +30,14 @@ function waPhone(raw: string) {
 
 function deliveryMessage(o: Order, accessUrl: string) {
   return (
-    `Halo ${o.buyerName}, pembayaran Anda untuk ${o.productTitle} sudah kami verifikasi. ✅\n\n` +
-    `Ini link pribadi untuk membaca e-book Anda (langsung buka, tanpa login):\n${accessUrl}\n\n` +
-    `Link ini aktif untuk maksimal 3 perangkat (mis. HP & laptop) — mohon jangan dibagikan.\n` +
-    `Kode pesanan: ${o.orderRef}\n\nTerima kasih! 🙏`
+    `Halo ${o.buyerName}! 🐼🇨🇳✨\n\n` +
+    `Pembayaran Anda untuk ${o.productTitle} sudah kami verifikasi. ✅\n\n` +
+    `📖 Ini link pribadi untuk membaca e-book Anda (langsung buka, tanpa login):\n${accessUrl}\n\n` +
+    `🔒 Ketentuan Akses & Hak Cipta:\n` +
+    `• Link ini aktif untuk maksimal 3 perangkat (mis. HP & laptop) — mohon tidak dibagikan.\n` +
+    `• Masing-masing e-book dilengkapi watermark kode unik pembeli serta proteksi anti-screenshot / perekaman layar untuk melindungi hak cipta.\n\n` +
+    `Kode pesanan: ${o.orderRef}\n\n` +
+    `Selamat belajar & terima kasih banyak! 🙏🏻🐼🇨🇳✨`
   );
 }
 
