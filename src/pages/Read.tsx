@@ -43,6 +43,8 @@ export default function Read() {
   const [accessError, setAccessError] = useState<string | null>(null);
   // Traceable watermark label (orderRef for magic-link buyers, email otherwise).
   const [watermark, setWatermark] = useState<string | null>(null);
+  // Buyer name from the magic-link order, shown in the header of the unique link.
+  const [buyerName, setBuyerName] = useState<string | null>(null);
   
   // State untuk fitur advanced
   const [viewMode, setViewMode] = useState<'flip' | 'scroll'>(window.innerWidth < 768 ? 'scroll' : 'flip');
@@ -60,8 +62,8 @@ export default function Read() {
   const [initialPage, setInitialPage] = useState(0);
   
   const { user } = useAuth();
-  const buyerEmail = user?.email || "Tamu / Guest"; 
-  const displayTitle = slug === 'test' ? 'E-Book Ling Chinese Lab Volume I' : slug;
+  const buyerEmail = user?.email || "Tamu / Guest";
+  const displayTitle = buyerName || (slug === 'test' ? 'E-Book Ling Chinese Lab Volume I' : slug);
   
   type FlipBookApi = {
     pageFlip: () => {
@@ -75,36 +77,109 @@ export default function Read() {
   useEffect(() => {
     // Responsive otomatis
     const handleResize = () => {
-      const isMobile = window.innerWidth < 768;
-      // Jangan paksa ubah viewMode jika user yang klik manual, tapi sesuaikan ukuran buku
       const w = Math.min(450, window.innerWidth - 32); 
       setBookDim({ width: w, height: w * (636 / 450) });
     };
-    handleResize(); // trigger once
+    handleResize();
     window.addEventListener('resize', handleResize);
-    
-    // Anti klik kanan
-    const disableContextMenu = (e: MouseEvent) => e.preventDefault();
-    document.addEventListener('contextmenu', disableContextMenu);
 
-    // Anti Keyboard Shortcuts (Screenshot/Print/Save)
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        (e.ctrlKey && e.key.toLowerCase() === 's') ||
-        (e.ctrlKey && e.key.toLowerCase() === 'p') ||
-        (e.metaKey && e.shiftKey) || 
-        e.key === 'PrintScreen'
-      ) {
+    // ── ROBUST PRIVACY PROTECTION ALGORITHM (Anti-Screenshot / Anti-Snipping Tool) ──
+    let overlay: HTMLDivElement | null = null;
+    let isBlocked = false;
+
+    const createOverlay = () => {
+      if (overlay) return overlay;
+      overlay = document.createElement('div');
+      overlay.id = 'privacy-block-overlay';
+      overlay.style.cssText =
+        'position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: #000 !important; color: #ff4d4d !important; z-index: 2147483647 !important; display: none !important; align-items: center !important; justify-content: center !important; font-family: system-ui, -apple-system, sans-serif !important; text-align: center !important; padding: 20px !important; select: none !important;';
+      overlay.innerHTML = `
+        <div style="max-width: 480px; margin: 0 auto; background: #111; padding: 32px; border-radius: 20px; border: 1px solid #333; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);">
+          <div style="font-size: 64px; margin-bottom: 16px;">🚫</div>
+          <div style="font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px;">AKSI SCREENSHOT DIBLOKIR</div>
+          <div style="font-size: 14px; color: #fbbf24; font-weight: 600; margin-bottom: 16px;">Fitur screenshot dinonaktifkan demi melindungi hak cipta e-book.</div>
+          <div style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin-bottom: 24px;">Aktivitas ini tercatat secara otomatis. Silakan klik tombol di bawah untuk melanjutkan membaca.</div>
+          <button id="privacy-unblock-btn" style="background: #6A2B2B; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px;">Saya Mengerti</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const unblockBtn = overlay.querySelector('#privacy-unblock-btn');
+      if (unblockBtn) {
+        unblockBtn.addEventListener('click', () => {
+          if (overlay) overlay.style.display = 'none';
+          isBlocked = false;
+        });
+      }
+      return overlay;
+    };
+
+    const instantBlock = () => {
+      if (isBlocked) return;
+      isBlocked = true;
+      const el = createOverlay();
+      el.style.display = 'flex';
+      setTimeout(() => {
+        if (isBlocked && overlay) {
+          overlay.style.display = 'none';
+          isBlocked = false;
+        }
+      }, 6000);
+    };
+
+    // Ultra-aggressive key interception (Win+Shift+S, PrintScreen, Cmd+Shift+S, Ctrl+S, Ctrl+P)
+    const preventScreenshotKeys = (e: KeyboardEvent) => {
+      const isWinShiftS =
+        (e.metaKey && e.shiftKey && (e.key === 's' || e.key === 'S' || e.code === 'KeyS')) ||
+        (e.ctrlKey && e.shiftKey && (e.key === 's' || e.key === 'S')) ||
+        (e.getModifierState && e.getModifierState('Meta') && e.getModifierState('Shift') && (e.key === 's' || e.key === 'S')) ||
+        (e.keyCode === 83 && e.metaKey && e.shiftKey);
+
+      const isPrintScreen = e.key === 'PrintScreen' || e.code === 'PrintScreen' || e.keyCode === 44;
+      const isSaveOrPrint = (e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'p');
+
+      if (isWinShiftS || isPrintScreen || isSaveOrPrint) {
         e.preventDefault();
-        toast.error("Fitur screenshot & simpan dinonaktifkan untuk melindungi hak cipta.");
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        instantBlock();
+        return false;
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    
+
+    // Attach handlers at both capture and bubble phases
+    window.addEventListener('keydown', preventScreenshotKeys, { capture: true, passive: false });
+    document.addEventListener('keydown', preventScreenshotKeys, { capture: true, passive: false });
+    window.addEventListener('keyup', preventScreenshotKeys, { capture: true, passive: false });
+    document.addEventListener('contextmenu', (e) => { e.preventDefault(); instantBlock(); });
+
+    // Focus loss monitoring (detect Snipping Tool opening)
+    let lastFocusTime = Date.now();
+    const focusInterval = setInterval(() => {
+      const now = Date.now();
+      if (!document.hasFocus() && now - lastFocusTime < 80) {
+        instantBlock();
+      }
+      lastFocusTime = now;
+    }, 5);
+
+    const handleVisibility = () => {
+      if (document.hidden) instantBlock();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', instantBlock);
+
     return () => {
       window.removeEventListener('resize', handleResize);
-      document.removeEventListener('contextmenu', disableContextMenu);
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', preventScreenshotKeys, { capture: true });
+      document.removeEventListener('keydown', preventScreenshotKeys, { capture: true });
+      window.removeEventListener('keyup', preventScreenshotKeys, { capture: true });
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', instantBlock);
+      clearInterval(focusInterval);
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
     };
   }, []);
 
@@ -134,6 +209,7 @@ export default function Read() {
           const data = await res.json();
           setPdfUrl(data.signedUrl);
           if (data.watermark) setWatermark(data.watermark);
+          if (data.buyerName) setBuyerName(data.buyerName);
           return;
         }
 
