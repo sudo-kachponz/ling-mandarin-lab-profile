@@ -1,6 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { approveOrder, rejectOrder } from '../_lib/approveOrder';
+import { approveOrder, rejectOrder } from '../_lib/approveOrder.js';
+import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
 
 /**
  * Admin recap dashboard, gated by a simple username/password sent in headers.
@@ -12,24 +12,15 @@ import { approveOrder, rejectOrder } from '../_lib/approveOrder';
  * with /api/admin/verify via approveOrder.ts so the two paths can't drift.
  */
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-
-// Lazy so a missing SUPABASE_URL/KEY returns a clean JSON error instead of
-// crashing the function at import (which Vercel renders as non-JSON HTML,
-// breaking res.json() on the client and blocking login).
-function getDb() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 const PROOF_URL_TTL = 60 * 15; // 15 minutes
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   const user = String(req.headers['x-admin-user'] || '');
   const pass = String(req.headers['x-admin-password'] || '');
-  if (user !== ADMIN_USER || pass !== ADMIN_PASSWORD) {
+  // Fail closed: no password configured → nobody gets in (never default to admin123).
+  if (!ADMIN_PASSWORD || user !== ADMIN_USER || pass !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Username atau password salah.' });
   }
 
@@ -63,13 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const supabase = getDb();
-  if (!supabase) {
-    return res.status(500).json({
-      error: 'Server belum dikonfigurasi: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY belum di-set di Vercel.',
-    });
-  }
-
+  const supabase = getSupabaseAdmin();
   try {
     const { data: orders, error } = await supabase
       .from('orders')
@@ -112,4 +97,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[admin/dashboard] error:', error);
     return res.status(500).json({ error: message });
   }
-}
+});

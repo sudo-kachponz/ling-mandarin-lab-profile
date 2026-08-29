@@ -1,18 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { buildDynamicQris } from '../_lib/qris';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { buildDynamicQris } from '../_lib/qris.js';
+import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
 
 /**
  * Returns the QRIS payload for an order. The nominal is always bound to a real
  * awaiting_verification order, which is why the static payload lives in an env
  * var read here (never a VITE_ var shipped to the browser).
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -26,6 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const supabase = getSupabaseAdmin();
     const { data: order } = await supabase
       .from('orders')
       .select('status, final_amount, unique_code, expires_at')
@@ -64,4 +60,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[manual/qris] error:', error);
     return res.status(500).json({ error: message });
   }
-}
+});

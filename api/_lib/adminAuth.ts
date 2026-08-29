@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest } from '@vercel/node';
+import { getSupabaseAdmin } from './supabaseAdmin.js';
 
 /**
  * Admin gate for every /api/admin/* endpoint. Most sensitive code in the manual
@@ -34,10 +34,7 @@ export async function requireAdmin(req: VercelRequest): Promise<AdminAuthResult>
     return { ok: false, status: 401, error: 'Unauthorized.' };
   }
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
+  const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data?.user?.email) {
     return { ok: false, status: 401, error: 'Sesi tidak valid atau kadaluarsa.' };

@@ -1,16 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  const supabase = getSupabaseAdmin();
   try {
     const { orderRef } = req.query;
     if (!orderRef || typeof orderRef !== 'string') {
@@ -56,4 +52,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error instanceof Error ? error.message : 'Internal Server Error';
     return res.status(500).json({ error: message });
   }
-}
+});

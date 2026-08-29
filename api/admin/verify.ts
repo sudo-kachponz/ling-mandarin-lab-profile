@@ -1,14 +1,9 @@
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireAdmin } from '../_lib/adminAuth';
-import { notifyTelegram } from '../_lib/telegram';
-import { approveOrder, rejectOrder } from '../_lib/approveOrder';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { requireAdmin } from '../_lib/adminAuth.js';
+import { notifyTelegram } from '../_lib/telegram.js';
+import { approveOrder, rejectOrder } from '../_lib/approveOrder.js';
+import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
 
 const verifySchema = z.object({
   orderRef: z.string().min(1),
@@ -16,7 +11,7 @@ const verifySchema = z.object({
   note: z.string().max(500).optional(),
 });
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -24,6 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await requireAdmin(req);
   if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
 
+  const supabase = getSupabaseAdmin();
   try {
     const parsed = verifySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -66,4 +62,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[admin/verify] error:', error);
     return res.status(500).json({ error: message });
   }
-}
+});

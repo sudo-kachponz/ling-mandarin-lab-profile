@@ -1,7 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+import { getSupabaseAdmin } from './supabaseAdmin.js';
 
 export type SettleSource = 'ipaymu' | 'manual';
 
@@ -42,7 +39,7 @@ export async function settlePayment(
     return { ok: false, alreadyPaid: false, reason: 'missing_order_ref' };
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getSupabaseAdmin();
 
   // 1. Look up the order.
   const { data: order, error: fetchError } = await supabase

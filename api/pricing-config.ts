@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { SERVICE_FEE } from './_lib/pricing';
+import { SERVICE_FEE } from './_lib/pricing.js';
 
 /**
  * Public pricing config for the checkout UI. The frontend reads the service fee

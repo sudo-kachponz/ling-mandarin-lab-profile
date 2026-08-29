@@ -1,22 +1,18 @@
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
 
 /**
  * Daily sweep: expire stale awaiting_verification orders so their unique codes
  * (only 900 per product nominal) are freed. Vercel Cron sends
  * `Authorization: Bearer ${CRON_SECRET}`; reject anything else.
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const supabase = getSupabaseAdmin();
   try {
     const { data, error } = await supabase
       .from('orders')
@@ -32,4 +28,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[cron/expire-orders] error:', error);
     return res.status(500).json({ error: message });
   }
-}
+});

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
-import { signIpaymuBody, type IpaymuConfig } from './ipaymu';
+import { signIpaymuBody, type IpaymuConfig } from './ipaymu.js';
 
 const config: IpaymuConfig = {
   va: '1179000899',

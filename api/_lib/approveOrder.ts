@@ -1,22 +1,13 @@
 import { randomUUID } from 'crypto';
-import { createClient } from '@supabase/supabase-js';
-import { settlePayment } from './grantEntitlement';
-import { notifyTelegram, formatIDR } from './telegram';
+import { settlePayment } from './grantEntitlement.js';
+import { notifyTelegram, formatIDR } from './telegram.js';
+import { getSupabaseAdmin } from './supabaseAdmin.js';
 
 /**
  * Shared approve/reject for a manual order. Used by BOTH /api/admin/verify
  * (Supabase-admin auth) and /api/admin/dashboard (password auth) so the two
  * paths can never grant access differently.
  */
-
-// Lazy so importing this module can't crash a function at load when the
-// Supabase env vars are unset (which Vercel renders as a non-JSON 500).
-function db() {
-  return createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
-}
 
 function baseUrl() {
   return (process.env.PUBLIC_BASE_URL || 'https://www.lingchineselab.com').replace(/\/$/, '');
@@ -28,7 +19,7 @@ export type ApproveResult =
 
 /** Approve an order: settle → mint access token → return the reader link. */
 export async function approveOrder(orderRef: string, actor: string): Promise<ApproveResult> {
-  const supabase = db();
+  const supabase = getSupabaseAdmin();
   const { data: order } = await supabase
     .from('orders')
     .select('amount, access_token, product:products(title, slug)')
@@ -77,7 +68,7 @@ export async function rejectOrder(
   actor: string,
   note?: string
 ): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  const supabase = db();
+  const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from('orders')
     .update({

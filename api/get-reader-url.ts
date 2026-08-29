@@ -1,11 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { decideDeviceAccess } from './_lib/deviceLock';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { decideDeviceAccess } from './_lib/deviceLock.js';
+import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
 
 const MAX_DEVICES = 3; // phone + laptop + spare (incognito/cache-clear churn)
 
@@ -14,6 +9,7 @@ async function signPdf(
   res: VercelResponse,
   extra: Record<string, unknown> = {}
 ) {
+  const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.storage
     .from('ebooks')
     .createSignedUrl(pdfPath, 60);
@@ -23,11 +19,12 @@ async function signPdf(
   return res.status(200).json({ signedUrl: data.signedUrl, ...extra });
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  const supabase = getSupabaseAdmin();
   try {
     const { slug, productId, token, deviceId } = req.body || {};
 
@@ -130,4 +127,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';
     return res.status(500).json({ error: message });
   }
-}
+});

@@ -1,15 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireAdmin } from '../_lib/adminAuth';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { requireAdmin } from '../_lib/adminAuth.js';
+import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
 
 const PROOF_URL_TTL = 60 * 15; // 15 minutes — long enough to review a batch.
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -17,6 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await requireAdmin(req);
   if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
 
+  const supabase = getSupabaseAdmin();
   try {
     const { data: orders, error } = await supabase
       .from('orders')
@@ -57,4 +53,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[admin/orders] error:', error);
     return res.status(500).json({ error: message });
   }
-}
+});

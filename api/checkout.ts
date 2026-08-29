@@ -1,14 +1,9 @@
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { SERVICE_FEE } from './_lib/pricing';
-import { guardPurchase } from './_lib/guards';
-import { getIpaymuConfig, ipaymuPost } from './_lib/ipaymu';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { SERVICE_FEE } from './_lib/pricing.js';
+import { guardPurchase } from './_lib/guards.js';
+import { getIpaymuConfig, ipaymuPost } from './_lib/ipaymu.js';
+import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
 
 // iPaymu sessions live 24h by default.
 const ORDER_EXPIRY_MINUTES = 24 * 60;
@@ -32,10 +27,12 @@ function resolveBaseUrl(req: VercelRequest): string {
   return `${protocol}://${host}`;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
+
+  const supabase = getSupabaseAdmin();
 
   // Kill switch: until iPaymu is truly live, refuse online checkout so no buyer
   // is sent to a sandbox that takes no money yet mints an entitlement.
@@ -145,4 +142,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Checkout error:', error);
     return res.status(500).json({ error: message });
   }
-}
+});

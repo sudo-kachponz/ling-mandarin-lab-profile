@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { decideDeviceAccess } from './deviceLock';
+import { decideDeviceAccess } from './deviceLock.js';
 
 describe('decideDeviceAccess (2-device limit)', () => {
   it('allows a device that is already bound', () => {

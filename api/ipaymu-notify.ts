@@ -1,13 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getIpaymuConfig, ipaymuPost } from './_lib/ipaymu';
-import { settlePayment } from './_lib/grantEntitlement';
-import { notifyTelegram } from './_lib/telegram';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { getIpaymuConfig, ipaymuPost } from './_lib/ipaymu.js';
+import { settlePayment } from './_lib/grantEntitlement.js';
+import { notifyTelegram } from './_lib/telegram.js';
+import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
 
 /** Normalize a callback body that may arrive as JSON or urlencoded string. */
 function normalizeBody(body: unknown): Record<string, string> {
@@ -29,7 +24,7 @@ function normalizeBody(body: unknown): Record<string, string> {
   return {};
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   // iPaymu retries on non-2xx, so we always ack 200 after logging.
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -43,6 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   );
 
   try {
+    const supabase = getSupabaseAdmin();
     const fields = normalizeBody(req.body);
 
     // Permanent audit trail of every inbound callback (best-effort).
@@ -109,4 +105,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Ack anyway to avoid retry storms; investigate via logs.
     return res.status(200).json({ received: true });
   }
-}
+});

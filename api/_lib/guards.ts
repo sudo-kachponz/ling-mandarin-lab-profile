@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from './supabaseAdmin.js';
 
 /**
  * Shared purchase guards used by BOTH /api/checkout and /api/qris/create.
@@ -7,11 +7,6 @@ import { createClient } from '@supabase/supabase-js';
  * never drift between the two payment entry points. If one path is patched,
  * the other gets the same behaviour for free.
  */
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
 
 // Beta whitelist lives server-side only (comma-separated emails). Never expose
 // the tester list to the browser — it only tells an attacker who the testers are.
@@ -52,6 +47,7 @@ export async function guardPurchase(
   productId: string,
   buyerEmail: string
 ): Promise<GuardResult> {
+  const supabase = getSupabaseAdmin();
   const normalizedEmail = buyerEmail.trim().toLowerCase();
 
   // --- BETA TESTING WHITELIST (server-side) ---

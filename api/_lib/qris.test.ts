@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { crc16, buildDynamicQris, verifyQris, validateQris } from './qris';
+import { crc16, buildDynamicQris, verifyQris, validateQris } from './qris.js';
 
 // A synthetic but fully valid STATIC payload (tag 01 = "11", all EMVCo-required
 // tags present, correct lengths, valid trailing CRC) so we exercise the real

@@ -1,13 +1,8 @@
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { guardPurchase } from '../_lib/guards';
-import { notifyTelegram, formatIDR } from '../_lib/telegram';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { guardPurchase } from '../_lib/guards.js';
+import { notifyTelegram, formatIDR } from '../_lib/telegram.js';
+import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
 
 // QRIS unique-code space is only 900 slots per product nominal, so orders
 // expire in 24h (not 48h) — a stale order otherwise squats a code. A daily cron
@@ -38,11 +33,12 @@ const manualSchema = z.object({
   method: z.enum(['qris', 'bca']),
 });
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  const supabase = getSupabaseAdmin();
   try {
     const parsed = manualSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -164,4 +160,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[manual/create] error:', error);
     return res.status(500).json({ error: message });
   }
-}
+});
