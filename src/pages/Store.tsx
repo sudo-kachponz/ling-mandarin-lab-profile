@@ -504,9 +504,6 @@ export default function Store() {
                 >
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-bold text-foreground">Scan QRIS</span>
-                    <Badge className="bg-[#E5B869] text-[#331111] hover:bg-[#E5B869] font-bold text-[10px] tracking-wide border-none px-2 py-0.5">
-                      CEPAT
-                    </Badge>
                   </div>
                   <div className="mt-auto flex items-baseline gap-2">
                     <span className="text-lg font-black text-[#6A2B2B]">Rp 60.000</span>
@@ -525,13 +522,7 @@ export default function Store() {
                 >
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-bold text-foreground">Transfer Bank (Manual)</span>
-                    <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100 font-bold text-[10px] tracking-wide border-none px-2 py-0.5">
-                      MANUAL
-                    </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                    Kirim dana ke rekening kami dan konfirmasi via WhatsApp untuk verifikasi manual (maks 1x24 jam).
-                  </p>
                   <div className="mt-auto flex items-baseline gap-2">
                     <span className="text-lg font-black text-[#6A2B2B]">Rp 60.000</span>
                     <span className="text-[10px] text-muted-foreground">(Tanpa biaya tambahan)</span>
@@ -541,6 +532,11 @@ export default function Store() {
               {paymentMethod === 'qris' && (
                 <p className="text-xs text-muted-foreground leading-relaxed mt-2">
                   Bayar via QRIS lalu unggah bukti. Link akses e-book dikirim ke WhatsApp Anda setelah diverifikasi (maks 1×24 jam).
+                </p>
+              )}
+              {paymentMethod === 'transfer' && (
+                <p className="text-xs text-muted-foreground leading-relaxed mt-2">
+                  Kirim dana ke rekening kami dan konfirmasi via WhatsApp untuk verifikasi manual (maks 1x24 jam).
                 </p>
               )}
             </div>
