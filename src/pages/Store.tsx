@@ -287,7 +287,9 @@ export default function Store() {
             <ShoppingCart className="w-6 h-6 text-[#6A2B2B]" />
           </Button>
         </div>
-        <div className="max-w-6xl mx-auto py-12 px-4 md:px-8">
+      </div>
+
+      <div className="max-w-6xl mx-auto py-12 px-4 md:px-8">
           {showPayments ? (
             <>
               {/* Highlight Section (Video Phone Frame + Copywriting) */}
@@ -703,5 +705,5 @@ export default function Store() {
           </DialogContent>
         </Dialog>
       </div>
-      );
+    );
 }
