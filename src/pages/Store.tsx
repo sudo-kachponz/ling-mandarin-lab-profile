@@ -65,7 +65,7 @@ export default function Store() {
   const { addToCart, setIsCartOpen } = useCart();
   const [previewUnlocked, setPreviewUnlocked] = useState(() => localStorage.getItem('store_preview') === '1');
   const [previewPass, setPreviewPass] = useState('');
-  const showPayments = PAYMENTS_LIVE || previewUnlocked;
+  const showPayments = true; // penjualan dibuka untuk umum
   const [previewPage, setPreviewPage] = useState(1); // 1, 2, 3 = preview pages, 4 = locked purchase page
 
   const unlockPreview = () => {

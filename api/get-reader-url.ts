@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { decideDeviceAccess } from './_lib/deviceLock.js';
 import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
 
-const MAX_DEVICES = 3; // phone + laptop + spare (incognito/cache-clear churn)
+const MAX_DEVICES = 2; // phone + laptop
 
 async function signPdf(
   pdfPath: string,
@@ -35,7 +35,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       }
       const { data: order } = await supabase
         .from('orders')
-        .select('id, order_ref, buyer_email, product_id, status, access_devices')
+        .select('id, order_ref, buyer_email, buyer_name, product_id, status, access_devices')
         .eq('access_token', token)
         .maybeSingle();
 
@@ -75,6 +75,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       return signPdf(product.pdf_path, res, {
         watermark: order.order_ref,
         orderRef: order.order_ref,
+        buyerName: order.buyer_name,
       });
     }
 
