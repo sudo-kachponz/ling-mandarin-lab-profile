@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useCart, CartItem } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
@@ -23,12 +22,6 @@ const ACCEPTED: Record<string, string> = {
 };
 const MAX_BYTES = 5 * 1024 * 1024;
 
-// Soft-launch gate: the payment UI is hidden from the public until launch.
-// Set VITE_PAYMENTS_LIVE=true to open it to everyone. Until then the owner can
-// unlock the preview with a password (no login/email needed).
-const PAYMENTS_LIVE = import.meta.env.VITE_PAYMENTS_LIVE === 'true';
-const STORE_PREVIEW_PASSWORD = import.meta.env.VITE_STORE_PREVIEW_PASSWORD || 'admin123';
-
 type QrisOrder = {
   orderRef: string;
   uploadUrl: string;
@@ -37,6 +30,7 @@ type QrisOrder = {
   uniqueCode: number;
   finalAmount: number;
   expiresAt: string;
+  method: 'qris' | 'transfer';
 };
 
 // Tipe untuk data produk dari tabel public.products
@@ -63,20 +57,7 @@ export default function Store() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToCart, setIsCartOpen } = useCart();
-  const [previewUnlocked, setPreviewUnlocked] = useState(() => localStorage.getItem('store_preview') === '1');
-  const [previewPass, setPreviewPass] = useState('');
-  const showPayments = true; // penjualan dibuka untuk umum
   const [previewPage, setPreviewPage] = useState(1); // 1, 2, 3 = preview pages, 4 = locked purchase page
-
-  const unlockPreview = () => {
-    if (previewPass === STORE_PREVIEW_PASSWORD) {
-      localStorage.setItem('store_preview', '1');
-      setPreviewUnlocked(true);
-      toast.success('Preview toko dibuka.');
-    } else {
-      toast.error('Password salah.');
-    }
-  };
 
   // Checkout form states
   const [buyerName, setBuyerName] = useState('');
@@ -169,64 +150,53 @@ export default function Store() {
 
     const targetProduct = products.length > 0 ? products[0] : mockProduct;
 
-    if (paymentMethod === 'qris') {
-      // Everything happens right here in a popup: create the order, render the
-      // QR (nominal already embedded), and upload proof — no page hops, no
-      // retyping name/email.
-      try {
-        setIsSubmitting(true);
-        const res = await fetch('/api/manual/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            productId: targetProduct.id,
-            buyerName,
-            buyerEmail,
-            buyerWhatsapp,
-            method: 'qris',
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Gagal membuat pesanan');
+    // Both methods create an awaiting_verification order and open the same popup
+    // (exact nominal + unique code + upload proof) — no page hops, no WhatsApp
+    // chat. QRIS additionally renders a QR; transfer shows the BCA account.
+    try {
+      setIsSubmitting(true);
+      const res = await fetch('/api/manual/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: targetProduct.id,
+          buyerName,
+          buyerEmail,
+          buyerWhatsapp,
+          method: paymentMethod === 'qris' ? 'qris' : 'bca',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal membuat pesanan');
 
+      if (paymentMethod === 'qris') {
         const qres = await fetch(`/api/manual/qris?orderRef=${encodeURIComponent(data.orderRef)}`);
         const qdata = await qres.json();
         if (!qres.ok) throw new Error(qdata.error || 'Gagal memuat QRIS');
-
         setQrDataUrl(await QRCode.toDataURL(qdata.payload, { width: 320, margin: 1 }));
         setQrisDynamic(!!qdata.isDynamic);
-        setPaidDone(false);
-        setProofFile(null);
-        setProofPreview(null);
-        setQrisOrder({
-          orderRef: data.orderRef,
-          uploadUrl: data.uploadUrl,
-          baseAmount: data.baseAmount,
-          serviceFee: data.serviceFee,
-          uniqueCode: data.uniqueCode,
-          finalAmount: data.finalAmount,
-          expiresAt: data.expiresAt,
-        });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Gagal memproses pembayaran');
-      } finally {
-        setIsSubmitting(false);
+      } else {
+        setQrDataUrl(null);
+        setQrisDynamic(false);
       }
-    } else {
-      // Transfer Bank (Manual)
-      const waNumber = '6285100195519';
-      const messageText = `Halo Ling Chinese Lab, saya ingin membeli E-Book Mandarin Vol. 1 via Transfer Bank.\n\n` +
-        `Detail Pembeli:\n` +
-        `• Nama: ${buyerName}\n` +
-        `• Email: ${buyerEmail}\n` +
-        `• WhatsApp: ${buyerWhatsapp}\n\n` +
-        `Saya akan mengirimkan bukti transfer setelah ini.`;
 
-      const encodedMsg = encodeURIComponent(messageText);
-      const url = `https://wa.me/${waNumber}?text=${encodedMsg}`;
-
-      toast.success("Membuka WhatsApp untuk konfirmasi transfer...");
-      window.open(url, '_blank');
+      setPaidDone(false);
+      setProofFile(null);
+      setProofPreview(null);
+      setQrisOrder({
+        orderRef: data.orderRef,
+        uploadUrl: data.uploadUrl,
+        baseAmount: data.baseAmount,
+        serviceFee: data.serviceFee,
+        uniqueCode: data.uniqueCode,
+        finalAmount: data.finalAmount,
+        expiresAt: data.expiresAt,
+        method: paymentMethod === 'qris' ? 'qris' : 'transfer',
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Gagal memproses pembayaran');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -290,8 +260,6 @@ export default function Store() {
       </div>
 
       <div className="max-w-6xl mx-auto py-12 px-4 md:px-8">
-          {showPayments ? (
-            <>
               {/* Highlight Section (Video Phone Frame + Copywriting) */}
               <div className="mb-16 grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] bg-white rounded-3xl p-6 md:p-10 shadow-soft border border-[#6A2B2B]/10">
 
@@ -413,6 +381,11 @@ export default function Store() {
                   <h2 className="text-3xl md:text-5xl font-black text-foreground leading-tight">
                     Rahasia Huruf Mandarin <span className="text-[#6A2B2B]">(Vol. 1)</span>
                   </h2>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="line-through text-muted-foreground text-lg md:text-xl font-bold">Rp 75.000</span>
+                    <span className="text-[#6A2B2B] text-2xl md:text-3xl font-black">Rp 60.000</span>
+                    <span className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">DISCOUNT 20%</span>
+                  </div>
                   <p className="text-lg text-muted-foreground leading-relaxed">
                     Buku panduan komprehensif menguasai dasar-dasar huruf Mandarin (Hanzi). Dirancang khusus dengan metode yang terstruktur agar proses belajar menjadi lebih mudah, cepat, dan menyenangkan.
                   </p>
@@ -504,7 +477,8 @@ export default function Store() {
                         <div className="flex justify-between items-center mb-3">
                           <span className="font-bold text-foreground">Scan QRIS</span>
                         </div>
-                        <div className="mt-auto flex items-baseline gap-2">
+                        <div className="mt-auto flex items-baseline gap-2 flex-wrap">
+                          <span className="text-xs line-through text-muted-foreground font-semibold">Rp 75.000</span>
                           <span className="text-lg font-black text-[#6A2B2B]">Rp 60.000</span>
                           <span className="text-[10px] text-muted-foreground">(+ kode unik 3 digit)</span>
                         </div>
@@ -521,7 +495,8 @@ export default function Store() {
                         <div className="flex justify-between items-center mb-3">
                           <span className="font-bold text-foreground">Transfer Bank (Manual)</span>
                         </div>
-                        <div className="mt-auto flex items-baseline gap-2">
+                        <div className="mt-auto flex items-baseline gap-2 flex-wrap">
+                          <span className="text-xs line-through text-muted-foreground font-semibold">Rp 75.000</span>
                           <span className="text-lg font-black text-[#6A2B2B]">Rp 60.000</span>
                           <span className="text-[10px] text-muted-foreground">(Tanpa biaya tambahan)</span>
                         </div>
@@ -534,46 +509,18 @@ export default function Store() {
                     )}
                     {paymentMethod === 'transfer' && (
                       <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-                        Kirim dana ke rekening kami dan konfirmasi via WhatsApp untuk verifikasi manual (maks 1x24 jam).
+                        Transfer ke rekening BCA kami lalu unggah bukti. Nomor rekening &amp; nominal pas (termasuk kode unik) muncul di langkah berikutnya. Link akses e-book dikirim ke WhatsApp Anda setelah diverifikasi (maks 1×24 jam).
                       </p>
                     )}
                   </div>
 
-                  {paymentMethod === 'transfer' && (
-                    <div className="p-5 rounded-2xl bg-[#f4efe9]/60 border border-[#6A2B2B]/10 space-y-4 transition-all duration-300">
-                      <p className="text-xs font-bold text-[#6A2B2B] uppercase tracking-wider">Rekening Pembayaran</p>
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground font-semibold">BANK BCA</p>
-                          <p className="text-lg font-black text-[#6A2B2B] tracking-wide mt-0.5">2160835373</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">a.n. Celine</p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="border-[#6A2B2B]/20 text-[#6A2B2B] hover:bg-[#6A2B2B]/5 rounded-lg flex items-center gap-1.5 h-9 font-semibold text-xs shrink-0 bg-white"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigator.clipboard.writeText('2160835373');
-                            toast.success('Nomor rekening disalin!');
-                          }}
-                        >
-                          Salin Rekening
-                        </Button>
-                      </div>
-                      <div className="text-xs text-muted-foreground leading-relaxed space-y-1">
-                        <p>1. Transfer tepat <strong>Rp 60.000</strong> ke rekening BCA di atas.</p>
-                        <p>2. Simpan struk/bukti transfer Anda.</p>
-                        <p>3. Isi formulir nama/email di atas, lalu klik tombol di bawah untuk mengirim bukti transfer ke WhatsApp admin.</p>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="p-4 rounded-xl bg-sand/10 border border-gray-100 space-y-2 text-sm">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Harga E-Book</span>
-                      <span className="font-semibold text-foreground">Rp 60.000</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs line-through text-muted-foreground font-semibold">Rp 75.000</span>
+                        <span className="font-semibold text-foreground">Rp 60.000</span>
+                      </div>
                     </div>
                     <div className="border-t border-dashed my-2 pt-2 flex justify-between font-bold text-base text-[#6A2B2B]">
                       <span>Total Bayar</span>
@@ -594,39 +541,11 @@ export default function Store() {
                     ) : paymentMethod === 'qris' ? (
                       'Lanjut ke Pembayaran QRIS'
                     ) : (
-                      'Konfirmasi Pembayaran via WhatsApp'
+                      'Lanjut ke Pembayaran Transfer'
                     )}
                   </Button>
                 </form>
               </div>
-            </>
-          ) : (
-            <div ref={checkoutRef} className="max-w-2xl mx-auto bg-white rounded-3xl p-8 md:p-14 shadow-soft border border-[#6A2B2B]/10 scroll-mt-6 text-center my-8">
-              <div className="w-20 h-20 rounded-full bg-[#E5B869]/20 flex items-center justify-center mx-auto mb-6 border border-[#E5B869]/40">
-                <Lock className="w-9 h-9 text-[#E5B869]" />
-              </div>
-              <h3 className="text-3xl md:text-4xl font-extrabold text-[#6A2B2B] tracking-tight">Segera Hadir</h3>
-              <p className="text-muted-foreground text-base md:text-lg mt-3 max-w-md mx-auto leading-relaxed">
-                Official Store &amp; Pembelian E-Book Ling Chinese Lab akan segera dibuka. Nantikan ya! 🙏
-              </p>
-
-              {/* Owner preview: unlock the store early with a password (no login). */}
-              <form
-                onSubmit={(e) => { e.preventDefault(); unlockPreview(); }}
-                className="mt-10 pt-8 border-t border-dashed max-w-xs mx-auto flex gap-2"
-              >
-                <Input
-                  type="password"
-                  placeholder="Password preview"
-                  value={previewPass}
-                  onChange={(e) => setPreviewPass(e.target.value)}
-                  className="h-11 bg-sand/30"
-                  autoComplete="off"
-                />
-                <Button type="submit" variant="outline" className="h-11 shrink-0 font-semibold">Masuk</Button>
-              </form>
-            </div>
-          )}
         </div>
 
         {/* Inline QRIS payment popup — data already entered, no page hop */}
@@ -646,10 +565,23 @@ export default function Store() {
               </div>
             ) : qrisOrder && (
               <>
-                <DialogHeader><DialogTitle>Scan &amp; Bayar QRIS</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{qrisOrder.method === 'qris' ? 'Scan & Bayar QRIS' : 'Transfer Bank BCA'}</DialogTitle></DialogHeader>
                 <div className="text-center">
-                  {qrDataUrl && <img src={qrDataUrl} alt="QRIS Ling Chinese Lab" className="w-56 h-56 mx-auto rounded-lg" />}
-                  <p className="text-xs text-muted-foreground">QRIS · Ling Chinese Lab</p>
+                  {qrisOrder.method === 'qris' ? (
+                    <>
+                      {qrDataUrl && <img src={qrDataUrl} alt="QRIS Ling Chinese Lab" className="w-56 h-56 mx-auto rounded-lg" />}
+                      <p className="text-xs text-muted-foreground">QRIS · Ling Chinese Lab</p>
+                    </>
+                  ) : (
+                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-left">
+                      <p className="text-xs text-muted-foreground font-semibold">BANK BCA</p>
+                      <p className="text-lg font-black text-[#6A2B2B] tracking-wide mt-0.5">2160835373</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">a.n. Celine</p>
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => copyText('2160835373', 'Nomor rekening')}>
+                        <Copy className="w-4 h-4 mr-1" /> Salin rekening
+                      </Button>
+                    </div>
+                  )}
                   <div className="bg-[#f4efe9]/70 rounded-xl p-3 mt-3">
                     <p className="text-xs text-muted-foreground">Nominal</p>
                     <p className="text-2xl font-extrabold text-[#6A2B2B]">{formatPrice(qrisOrder.finalAmount)}</p>
@@ -657,12 +589,12 @@ export default function Store() {
                       <Copy className="w-4 h-4 mr-1" /> Salin nominal
                     </Button>
                   </div>
-                  {qrisDynamic ? (
+                  {qrisOrder.method === 'qris' && qrisDynamic ? (
                     <p className="text-xs text-muted-foreground mt-2">Nominal terisi otomatis saat Anda scan.</p>
                   ) : (
                     <div className="mt-3 flex items-start gap-2 text-left text-xs text-red-700 bg-red-50 border border-red-200 p-2 rounded-lg">
                       <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <span>Masukkan nominal <strong>persis sampai 3 angka terakhir</strong> — itu kode pesanan Anda.</span>
+                      <span>{qrisOrder.method === 'qris' ? 'Masukkan' : 'Transfer'} nominal <strong>persis sampai 3 angka terakhir</strong> — itu kode pesanan Anda.</span>
                     </div>
                   )}
                   <div className="text-xs text-muted-foreground mt-3 text-left bg-sand/10 rounded-lg p-3 space-y-1">

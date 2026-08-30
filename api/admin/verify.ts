@@ -17,7 +17,10 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
   }
 
   const auth = await requireAdmin(req);
-  if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
+  if (!auth.ok) {
+    const f = auth as { status: number; error: string };
+    return res.status(f.status).json({ error: f.error });
+  }
 
   const supabase = getSupabaseAdmin();
   try {
@@ -45,12 +48,18 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
 
     if (action === 'reject') {
       const r = await rejectOrder(orderRef, auth.email, note);
-      if (!r.ok) return res.status(r.status).json({ error: r.error });
+      if (!r.ok) {
+        const f = r as { status: number; error: string };
+        return res.status(f.status).json({ error: f.error });
+      }
       return res.status(200).json({ ok: true, action: 'reject' });
     }
 
     const r = await approveOrder(orderRef, auth.email);
-    if (!r.ok) return res.status(r.status).json({ error: r.error });
+    if (!r.ok) {
+      const f = r as { status: number; error: string };
+      return res.status(f.status).json({ error: f.error });
+    }
     return res.status(200).json({
       ok: true,
       action: 'approve',

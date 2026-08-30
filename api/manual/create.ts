@@ -53,9 +53,10 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     // Same shared guards as checkout.ts (beta whitelist / product / ownership).
     const guard = await guardPurchase(productId, buyerEmail);
     if (!guard.ok) {
-      return res.status(guard.status).json({
-        error: guard.error,
-        ...(guard.alreadyOwned ? { alreadyOwned: true } : {}),
+      const g = guard as { status: number; error: string; alreadyOwned?: boolean };
+      return res.status(g.status).json({
+        error: g.error,
+        ...(g.alreadyOwned ? { alreadyOwned: true } : {}),
       });
     }
     const { product, normalizedEmail } = guard;

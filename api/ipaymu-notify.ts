@@ -65,7 +65,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     let paid = false;
     if (trxId) {
       const { data } = await ipaymuPost('/transaction', { transactionId: trxId });
-      const d = data?.Data ?? {};
+      const d = (data as { Data?: { Status?: number; StatusDesc?: string } } | null)?.Data ?? {};
       const statusDesc = String(d.StatusDesc ?? d.Status ?? '').toLowerCase();
       paid = d.Status === 1 || statusDesc === 'berhasil' || statusDesc === 'success';
     } else {

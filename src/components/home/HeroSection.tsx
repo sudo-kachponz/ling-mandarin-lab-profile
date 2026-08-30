@@ -191,7 +191,7 @@ const HeroSection = () => {
                 <span className="flex w-full items-center justify-center gap-2">
                   <BookOpen className="size-5 sm:size-7 shrink-0" />
                   <p className="text-sm sm:text-lg font-bold whitespace-nowrap">
-                    Beli E-Book
+                    Beli E-Book (DISC 75k → 60k)
                   </p>
                 </span>
               </Button>

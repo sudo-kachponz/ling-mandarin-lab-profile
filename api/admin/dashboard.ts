@@ -37,11 +37,17 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     try {
       if (action === 'reject') {
         const r = await rejectOrder(orderRef, 'dashboard:' + user, note);
-        if (!r.ok) return res.status(r.status).json({ error: r.error });
+        if (!r.ok) {
+          const f = r as { status: number; error: string };
+          return res.status(f.status).json({ error: f.error });
+        }
         return res.status(200).json({ ok: true, action: 'reject' });
       }
       const r = await approveOrder(orderRef, 'dashboard:' + user);
-      if (!r.ok) return res.status(r.status).json({ error: r.error });
+      if (!r.ok) {
+        const f = r as { status: number; error: string };
+        return res.status(f.status).json({ error: f.error });
+      }
       return res.status(200).json({ ok: true, action: 'approve', accessUrl: r.accessUrl, alreadyPaid: r.alreadyPaid });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Internal Server Error';
@@ -84,7 +90,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
           uniqueCode: o.unique_code,
           status: o.status,
           paymentMethod: o.payment_method,
-          productTitle: o.product?.title ?? '(produk tidak ditemukan)',
+          productTitle: (o.product as unknown as { title: string } | null)?.title ?? '(produk tidak ditemukan)',
           proofUrl,
           createdAt: o.created_at,
         };

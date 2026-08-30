@@ -10,7 +10,10 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
   }
 
   const auth = await requireAdmin(req);
-  if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
+  if (!auth.ok) {
+    const f = auth as { status: number; error: string };
+    return res.status(f.status).json({ error: f.error });
+  }
 
   const supabase = getSupabaseAdmin();
   try {
@@ -40,7 +43,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
           amount: o.final_amount ?? o.amount,
           uniqueCode: o.unique_code,
           expiresAt: o.expires_at,
-          productTitle: o.product?.title ?? '(produk tidak ditemukan)',
+          productTitle: (o.product as unknown as { title: string } | null)?.title ?? '(produk tidak ditemukan)',
           proofUrl,
           createdAt: o.created_at,
         };

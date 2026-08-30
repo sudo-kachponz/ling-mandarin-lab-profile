@@ -55,9 +55,10 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     // Shared guards: beta whitelist / product exists / not already owned.
     const guard = await guardPurchase(productId, buyerEmail);
     if (!guard.ok) {
-      return res.status(guard.status).json({
-        error: guard.error,
-        ...(guard.alreadyOwned ? { alreadyOwned: true } : {}),
+      const g = guard as { status: number; error: string; alreadyOwned?: boolean };
+      return res.status(g.status).json({
+        error: g.error,
+        ...(g.alreadyOwned ? { alreadyOwned: true } : {}),
       });
     }
     const { product, normalizedEmail } = guard;
@@ -113,25 +114,30 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     };
 
     const { ok, data } = await ipaymuPost('/payment', body, config);
-    const paymentUrl = data?.Data?.Url;
+    const d = data as {
+      Data?: { Url?: string; SessionID?: string };
+      Status?: number;
+      Message?: string | string[];
+    } | null;
+    const paymentUrl = d?.Data?.Url;
 
     if (!ok || !paymentUrl) {
       console.error('[checkout] iPaymu error:', {
-        status: data?.Status,
-        message: data?.Message,
+        status: d?.Status,
+        message: d?.Message,
         body: data,
       });
       throw new Error(
-        (Array.isArray(data?.Message) ? data.Message[0] : data?.Message) ||
+        (Array.isArray(d?.Message) ? d.Message[0] : d?.Message) ||
           'Gagal membuat pembayaran iPaymu'
       );
     }
 
     // Store the iPaymu session id for traceability.
-    if (data?.Data?.SessionID) {
+    if (d?.Data?.SessionID) {
       await supabase
         .from('orders')
-        .update({ doku_invoice_id: data.Data.SessionID })
+        .update({ doku_invoice_id: d.Data.SessionID })
         .eq('order_ref', orderRef);
     }
 
