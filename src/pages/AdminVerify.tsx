@@ -40,14 +40,14 @@ const formatPrice = (n: number) =>
 
 function whatsappMessage(o: AdminOrder, accessUrl: string) {
   return (
-    `Halo ${o.buyerName}! 🐼🇨🇳✨\n\n` +
-    `Pembayaran Anda untuk ${o.productTitle} sudah kami verifikasi. ✅\n\n` +
-    `📖 Ini link pribadi untuk membaca e-book Anda (langsung buka, tanpa login):\n${accessUrl}\n\n` +
-    `🔒 Ketentuan Akses & Hak Cipta:\n` +
-    `• Link ini aktif untuk maksimal 3 perangkat (mis. HP & laptop) — mohon tidak dibagikan.\n` +
-    `• Masing-masing e-book dilengkapi watermark kode unik pembeli serta proteksi anti-screenshot / perekaman layar untuk melindungi hak cipta.\n\n` +
+    `Halo ${o.buyerName}!\n\n` +
+    `Pembayaran Anda untuk ${o.productTitle} sudah kami verifikasi.\n\n` +
+    `Ini link pribadi untuk membaca e-book Anda (langsung buka, tanpa login):\n${accessUrl}\n\n` +
+    `Ketentuan Akses & Hak Cipta:\n` +
+    `- Link ini aktif untuk maksimal 3 perangkat (mis. HP & laptop) - mohon tidak dibagikan.\n` +
+    `- Masing-masing e-book dilengkapi watermark kode unik pembeli serta proteksi anti-screenshot / perekaman layar untuk melindungi hak cipta.\n\n` +
     `Kode pesanan: ${o.orderRef}\n\n` +
-    `Selamat belajar & terima kasih banyak! 🙏🏻🐼🇨🇳✨`
+    `Selamat belajar & terima kasih banyak!`
   );
 }
 
