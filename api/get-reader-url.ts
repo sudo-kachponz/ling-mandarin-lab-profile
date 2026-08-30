@@ -10,9 +10,12 @@ async function signPdf(
   extra: Record<string, unknown> = {}
 ) {
   const supabase = getSupabaseAdmin();
+  // 6h: pdf.js fetches byte-ranges over the whole reading session on this one
+  // URL, so a 60s expiry died mid-read → "network error". Watermark + device
+  // lock already bound the link, so a longer window is safe.
   const { data, error } = await supabase.storage
     .from('ebooks')
-    .createSignedUrl(pdfPath, 60);
+    .createSignedUrl(pdfPath, 60 * 60 * 6);
   if (error || !data) {
     return res.status(500).json({ error: 'Failed to generate signed URL' });
   }

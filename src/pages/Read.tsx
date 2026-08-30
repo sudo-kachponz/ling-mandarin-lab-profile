@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { pdfjs, Document, Page } from 'react-pdf';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import HTMLFlipBook from 'react-pageflip';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -12,20 +13,32 @@ import { Input } from '@/components/ui/input';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-// Wrapper komponen halaman untuk HTMLFlipBook (wajib pakai forwardRef)
-const PdfPageWrapper = React.forwardRef<HTMLDivElement, { pageNum: number, height: number }>(
-  ({ pageNum, height }, ref) => {
+// Stable ref (module-level) so react-pdf doesn't reload the doc each render.
+// disableAutoFetch stops pdf.js from eagerly downloading the WHOLE book after
+// page 1 — on mobile that background download starved the current page's fetch.
+const PDF_OPTIONS = { disableAutoFetch: true, disableStream: false };
+
+// Wrapper komponen halaman untuk HTMLFlipBook (wajib pakai forwardRef).
+// `active` = halaman ada dalam jendela baca; hanya yang aktif yang benar-benar
+// dirender oleh pdf.js. Sisanya placeholder ukuran sama → flip tetap mulus tapi
+// tidak men-decode seluruh buku di depan (penyebab utama lemot).
+const PdfPageWrapper = React.forwardRef<HTMLDivElement, { pageNum: number, height: number, active: boolean }>(
+  ({ pageNum, height, active }, ref) => {
     return (
-      <div ref={ref} className="bg-white overflow-hidden shadow-inner cursor-pointer" data-density="soft">
-        <Page 
-          pageNumber={pageNum} 
-          renderTextLayer={false}
-          renderAnnotationLayer={false}
-          className="pointer-events-none flex items-center justify-center w-full h-full [&_.react-pdf__Page__canvas]:!w-full [&_.react-pdf__Page__canvas]:!h-full [&_.react-pdf__Page__canvas]:!object-fill"
-          height={height} // Patokan tinggi dinamis 
-        />
+      <div ref={ref} className="bg-white overflow-hidden shadow-inner cursor-pointer flex items-center justify-center" data-density="soft" style={{ height }}>
+        {active ? (
+          <Page
+            pageNumber={pageNum}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+            className="pointer-events-none flex items-center justify-center w-full h-full [&_.react-pdf__Page__canvas]:!w-full [&_.react-pdf__Page__canvas]:!h-full [&_.react-pdf__Page__canvas]:!object-fill"
+            height={height} // Patokan tinggi dinamis
+          />
+        ) : (
+          <span className="text-zinc-300 text-xs select-none">Hal {pageNum}</span>
+        )}
       </div>
     );
   }
@@ -63,6 +76,9 @@ export default function Read() {
   
   const { user } = useAuth();
   const buyerEmail = user?.email || "Tamu / Guest";
+  // Cap render resolution: phones report DPR 2–3, which makes pdf.js rasterize a
+  // canvas 4–9× the pixels and chokes weaker mobile CPUs. 2 stays sharp for text.
+  const pdfDpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2);
   const displayTitle = buyerName || (slug === 'test' ? 'E-Book Ling Chinese Lab Volume I' : slug);
   
   type FlipBookApi = {
@@ -127,7 +143,7 @@ export default function Read() {
       }, 6000);
     };
 
-    // Ultra-aggressive key interception (Win+Shift+S, PrintScreen, Cmd+Shift+S, Ctrl+S, Ctrl+P)
+    // Ultra-aggressive key interception (Win+Shift+S, PrintScreen, Cmd+Shift+3/4/5, Ctrl+S, Ctrl+P)
     const preventScreenshotKeys = (e: KeyboardEvent) => {
       const isWinShiftS =
         (e.metaKey && e.shiftKey && (e.key === 's' || e.key === 'S' || e.code === 'KeyS')) ||
@@ -135,10 +151,13 @@ export default function Read() {
         (e.getModifierState && e.getModifierState('Meta') && e.getModifierState('Shift') && (e.key === 's' || e.key === 'S')) ||
         (e.keyCode === 83 && e.metaKey && e.shiftKey);
 
+      const isMacScreenshot =
+        (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5' || e.code === 'Digit3' || e.code === 'Digit4' || e.code === 'Digit5'));
+
       const isPrintScreen = e.key === 'PrintScreen' || e.code === 'PrintScreen' || e.keyCode === 44;
       const isSaveOrPrint = (e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'p');
 
-      if (isWinShiftS || isPrintScreen || isSaveOrPrint) {
+      if (isWinShiftS || isMacScreenshot || isPrintScreen || isSaveOrPrint) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -153,21 +172,40 @@ export default function Read() {
     window.addEventListener('keyup', preventScreenshotKeys, { capture: true, passive: false });
     document.addEventListener('contextmenu', (e) => { e.preventDefault(); instantBlock(); });
 
-    // Focus loss monitoring (detect Snipping Tool opening)
-    let lastFocusTime = Date.now();
+    // Focus loss monitoring (detect Snipping Tool / macOS Screenshot utility opening)
     const focusInterval = setInterval(() => {
-      const now = Date.now();
-      if (!document.hasFocus() && now - lastFocusTime < 80) {
+      if (!document.hasFocus()) {
         instantBlock();
       }
-      lastFocusTime = now;
-    }, 5);
+    }, 50);
 
     const handleVisibility = () => {
       if (document.hidden) instantBlock();
     };
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('blur', instantBlock);
+
+    // Watermark dynamic protection
+    const targetNode = document.body;
+    const observerConfig = { childList: true, subtree: true, attributes: true };
+    const observerCallback = (mutationsList: MutationRecord[]) => {
+      for (const mutation of mutationsList) {
+        const wm = document.getElementById('watermark-container');
+        if (!wm) {
+          window.location.reload();
+          break;
+        }
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          const style = window.getComputedStyle(wm);
+          if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity || '1') < 0.05) {
+            window.location.reload();
+            break;
+          }
+        }
+      }
+    };
+    const observer = new MutationObserver(observerCallback);
+    observer.observe(targetNode, observerConfig);
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -177,6 +215,7 @@ export default function Read() {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('blur', instantBlock);
       clearInterval(focusInterval);
+      observer.disconnect();
       if (overlay && overlay.parentNode) {
         overlay.parentNode.removeChild(overlay);
       }
@@ -553,7 +592,7 @@ export default function Read() {
         {/* WATERMARK — traceable per buyer, tiled diagonally over every page.
             Doesn't stop screenshots (nothing does); it deters sharing because
             every leak traces back to the buyer. */}
-        <div className="fixed inset-0 z-40 pointer-events-none overflow-hidden rotate-[-30deg] scale-150 flex flex-wrap content-center justify-center gap-x-16 gap-y-24 opacity-[0.12]">
+        <div id="watermark-container" className="fixed inset-0 z-40 pointer-events-none overflow-hidden rotate-[-30deg] scale-150 flex flex-wrap content-center justify-center gap-x-16 gap-y-24 opacity-[0.12]">
           {Array.from({ length: 40 }).map((_, i) => (
             <span key={i} className="text-lg md:text-2xl font-bold text-white whitespace-nowrap">
               {watermark || buyerEmail} · Ling Chinese Lab
@@ -563,6 +602,7 @@ export default function Read() {
 
         <Document
           file={pdfUrl}
+          options={PDF_OPTIONS}
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(error) => toast.error('Gagal memuat PDF: ' + error.message)}
           className={`flex flex-col items-center transition-transform duration-300 w-full`}
@@ -597,9 +637,13 @@ export default function Read() {
                   className="bg-transparent"
                   style={{ margin: '0 auto' }}
                 >
-                  {Array.from(new Array(numPages), (el, index) => (
-                    <PdfPageWrapper key={`page_${index + 1}`} pageNum={index + 1} height={bookDim.height} />
-                  ))}
+                  {Array.from(new Array(numPages), (el, index) => {
+                    const p = index + 1;
+                    // Render only the pages near the current spread; the rest are
+                    // lightweight placeholders until the reader flips close.
+                    const active = Math.abs(p - currentPage) <= 3;
+                    return <PdfPageWrapper key={`page_${p}`} pageNum={p} height={bookDim.height} active={active} />;
+                  })}
                 </HTMLFlipBook>
               </div>
 
@@ -622,10 +666,11 @@ export default function Read() {
 
           {numPages && viewMode === 'scroll' ? (
             <div className="flex flex-col gap-6 items-center w-full max-w-4xl pb-20">
-              <Page 
-                pageNumber={currentPageScroll} 
+              <Page
+                pageNumber={currentPageScroll}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
+                devicePixelRatio={pdfDpr}
                 className="shadow-2xl bg-white rounded-sm overflow-hidden"
                 width={typeof window !== 'undefined' ? Math.min(window.innerWidth - 32, 800) : 800}
               />

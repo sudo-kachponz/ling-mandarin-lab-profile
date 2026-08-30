@@ -8,10 +8,11 @@ import { CheckCircle2, Lock, ChevronLeft, ChevronRight, Copy, Upload, AlertTrian
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import { pdfjs, Document, Page } from 'react-pdf';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const ACCEPTED: Record<string, string> = {
   'image/jpeg': 'jpg',
