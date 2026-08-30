@@ -186,7 +186,7 @@ const HeroSection = () => {
               <Button
                 size="lg"
                 onClick={() => navigate('/store')}
-                className="relative py-5 md:py-8 lg:px-6 w-full md:w-auto sm:min-w-[220px] flex-1 rounded-full bg-secondary text-secondary-foreground shadow-lg hover:bg-secondary/90 border-2 border-transparent"
+                className="relative py-5 md:py-8 lg:px-6 w-full md:w-auto sm:min-w-[220px] flex-1 rounded-full bg-[#6A2B2B] hover:bg-[#522121] text-white shadow-lg border-2 border-transparent"
               >
                 <span className="flex w-full items-center justify-center gap-2">
                   <BookOpen className="size-5 sm:size-7 shrink-0" />
