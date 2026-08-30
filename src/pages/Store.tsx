@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useCart, CartItem } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { ShoppingCart, CheckCircle2, Lock, ChevronLeft, ChevronRight, Copy, Upload, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Lock, ChevronLeft, ChevronRight, Copy, Upload, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import { pdfjs, Document, Page } from 'react-pdf';
@@ -56,7 +55,6 @@ const mockProduct: Product = {
 export default function Store() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addToCart, setIsCartOpen } = useCart();
   const [previewPage, setPreviewPage] = useState(1); // 1, 2, 3 = preview pages, 4 = locked purchase page
 
   // Checkout form states
@@ -103,18 +101,6 @@ export default function Store() {
 
     fetchProducts();
   }, []);
-
-  const handleAddToCart = (product: Product) => {
-    const item: CartItem = {
-      id: product.id,
-      title: product.title,
-      price: product.price,
-      cover_url: product.cover_url,
-      slug: product.slug
-    };
-    addToCart(item);
-    toast.success("Berhasil ditambahkan ke keranjang");
-  };
 
   const formatPrice = (price: number) => {
     const formatted = new Intl.NumberFormat('id-ID', {
@@ -242,20 +228,9 @@ export default function Store() {
     <div className="min-h-screen bg-background">
       {/* Header Store - Background kembali ke warna netral yang elegan */}
       <div className="bg-[#f4efe9] border-b border-[#6A2B2B]/10 py-12 px-4 md:px-8">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-[#6A2B2B] tracking-tight">OFFICIAL STORE</h1>
-            <p className="text-[#6A2B2B]/70 mt-2 text-lg font-medium">Ling Chinese Lab</p>
-          </div>
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="w-12 h-12 relative bg-white border-[#6A2B2B]/20 hover:bg-[#6A2B2B]/5 hover:border-[#6A2B2B]/30 transition-colors shadow-sm"
-            onClick={() => setIsCartOpen(true)}
-          >
-            <ShoppingCart className="w-6 h-6 text-[#6A2B2B]" />
-          </Button>
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl md:text-5xl font-extrabold text-[#6A2B2B] tracking-tight">OFFICIAL STORE</h1>
+          <p className="text-[#6A2B2B]/70 mt-2 text-lg font-medium">Ling Chinese Lab</p>
         </div>
       </div>
 
@@ -498,7 +473,7 @@ export default function Store() {
                         <div className="mt-auto flex items-baseline gap-2 flex-wrap">
                           <span className="text-xs line-through text-muted-foreground font-semibold">Rp 75.000</span>
                           <span className="text-lg font-black text-[#6A2B2B]">Rp 60.000</span>
-                          <span className="text-[10px] text-muted-foreground">(Tanpa biaya tambahan)</span>
+                          <span className="text-[10px] text-muted-foreground">(+ kode unik 3 digit)</span>
                         </div>
                       </div>
                     </div>

@@ -100,7 +100,7 @@ export default function PaymentPending() {
             <Button
               variant="outline"
               className="w-full font-bold h-12 border-primary text-primary hover:bg-primary/5"
-              onClick={() => navigate('/checkout')}
+              onClick={() => navigate('/store')}
             >
               Coba Lagi
             </Button>
