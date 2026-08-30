@@ -50,18 +50,7 @@ export async function guardPurchase(
   const supabase = getSupabaseAdmin();
   const normalizedEmail = buyerEmail.trim().toLowerCase();
 
-  // --- BETA TESTING WHITELIST (server-side) ---
-  if (
-    BETA_ALLOWED_EMAILS.length > 0 &&
-    !BETA_ALLOWED_EMAILS.includes(normalizedEmail)
-  ) {
-    return {
-      ok: false,
-      status: 403,
-      error:
-        'Mohon maaf, sistem pembayaran masih dalam tahap pengujian internal (Beta). Email Anda belum terdaftar sebagai tester.',
-    };
-  }
+  // --- BETA TESTING WHITELIST (Disabled to open sales to the public) ---
 
   // Fetch product details from database.
   const { data: product, error: productError } = await supabase

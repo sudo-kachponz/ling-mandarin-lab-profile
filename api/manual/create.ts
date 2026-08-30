@@ -48,10 +48,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     }
     const { productId, buyerEmail, buyerName, buyerWhatsapp, method } = parsed.data;
 
-    // Soft-launch gate: before launch only preview emails may create orders.
-    if (!PAYMENTS_LIVE && !PREVIEW_EMAILS.includes(String(buyerEmail).toLowerCase())) {
-      return res.status(403).json({ error: 'Penjualan belum dibuka untuk umum.' });
-    }
+    // Soft-launch gate removed to open sales to the public.
 
     // Same shared guards as checkout.ts (beta whitelist / product / ownership).
     const guard = await guardPurchase(productId, buyerEmail);
