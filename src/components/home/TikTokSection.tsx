@@ -26,6 +26,8 @@ import oliviaTocfl1 from "@/assets/Laoshi/Olivia/olivia_tocfl_1.jpeg";
 import oliviaTocfl2 from "@/assets/Laoshi/Olivia/olivia_tocfl_2.jpeg";
 import audreyHsk from "@/assets/Laoshi/Audrey/audreyHSK5.pdf";
 import audreyTocfl from "@/assets/Laoshi/Audrey/audreytocfl.jpeg";
+import liaTocfl1 from "@/assets/Laoshi/Lia/lia_tocfl_1.jpg";
+import liaTocfl2 from "@/assets/Laoshi/Lia/lia_tocfl_2.jpg";
 
 
 const icons = {
@@ -169,6 +171,22 @@ const certificates: Certificate[] = [
     preview: audreyTocfl,
     mentor: "Audrey Laoshi",
     description: "TOCFL B1 Certificate",
+    type: "TOCFL" as CertificateType,
+    previewType: "image"
+  },
+  {
+    src: liaTocfl1,
+    preview: liaTocfl1,
+    mentor: "Laoshi Lia Angeline",
+    description: "TOCFL Level 3 Certificate",
+    type: "TOCFL" as CertificateType,
+    previewType: "image"
+  },
+  {
+    src: liaTocfl2,
+    preview: liaTocfl2,
+    mentor: "Laoshi Lia Angeline",
+    description: "TOCFL Level 3 Score Report",
     type: "TOCFL" as CertificateType,
     previewType: "image"
   }

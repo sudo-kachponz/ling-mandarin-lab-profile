@@ -45,6 +45,9 @@ import taiyaHsk2 from "@/assets/Laoshi/Taiya/HSK6_2.pdf";
 import audreyPhoto from "@/assets/Laoshi/Audrey/audrey.svg";
 import audreyHsk from "@/assets/Laoshi/Audrey/audreyHSK5.pdf";
 import audreyTocfl from "@/assets/Laoshi/Audrey/audreytocfl.jpeg";
+import liaPhoto from "@/assets/Laoshi/Lia/ang.svg";
+import liaTocfl1 from "@/assets/Laoshi/Lia/lia_tocfl_1.jpg";
+import liaTocfl2 from "@/assets/Laoshi/Lia/lia_tocfl_2.jpg";
 
 
 export interface TeacherCertificate {
@@ -295,6 +298,23 @@ export const teachers: Teacher[] = [
     certificates: [
       { label: "HSK 5 - Audrey", file: audreyHsk, type: "pdf" },
       { label: "TOCFL B1 - Audrey", file: audreyTocfl, type: "image" }
+    ]
+  },
+  {
+    id: 14,
+    name: "Lia Angeline",
+    mandarinName: "馮詩雯 Laoshi",
+    location: "Online",
+    schools: [schoolOptions.chunghsing],
+    education: educationText([schoolOptions.chunghsing]),
+    photo: liaPhoto,
+    degree: "Sertifikasi TOCFL Level 3",
+    xinzhongBackground: "Lulusan National Chung Hsing University dengan kemampuan bahasa Mandarin yang mendalam.",
+    certification: "TOCFL Level 3",
+    experience: "Berpengalaman mengajar bahasa Mandarin.",
+    certificates: [
+      { label: "Sertifikat Lia Angeline", file: liaTocfl1, type: "image" },
+      { label: "TOCFL Score Report", file: liaTocfl2, type: "image" }
     ]
   }
 ];
