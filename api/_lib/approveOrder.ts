@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { settlePayment } from './grantEntitlement.js';
 import { notifyTelegram, formatIDR } from './telegram.js';
 import { getSupabaseAdmin } from './supabaseAdmin.js';
+import { proofUploaded } from './proof.js';
 
 /**
  * Shared approve/reject for a manual order. Used by BOTH /api/admin/verify
@@ -22,10 +23,17 @@ export async function approveOrder(orderRef: string, actor: string): Promise<App
   const supabase = getSupabaseAdmin();
   const { data: order } = await supabase
     .from('orders')
-    .select('amount, access_token, product:products(title, slug)')
+    .select('amount, access_token, status, proof_path, product:products(title, slug)')
     .eq('order_ref', orderRef)
     .single();
   if (!order) return { ok: false, status: 404, error: 'Order tidak ditemukan.' };
+
+  // Never grant access to an order whose buyer never uploaded a proof. The order
+  // enters 'awaiting_verification' at QRIS-generation time, so this — not the
+  // status — is the real gate. Skip for already-paid orders (idempotent re-approve).
+  if (order.status !== 'paid' && !(await proofUploaded(order.proof_path as string | null))) {
+    return { ok: false, status: 400, error: 'Belum bisa disetujui: pembeli belum mengunggah bukti pembayaran.' };
+  }
 
   const product = (order as unknown as { product: { title: string; slug: string } | null }).product;
   const productTitle = product?.title ?? 'E-Book';

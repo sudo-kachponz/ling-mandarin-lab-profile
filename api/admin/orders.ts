@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireAdmin } from '../_lib/adminAuth.js';
 import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
+import { proofUploaded } from '../_lib/proof.js';
 
 const PROOF_URL_TTL = 60 * 15; // 15 minutes — long enough to review a batch.
 
@@ -26,8 +27,10 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       .order('created_at', { ascending: false });
     if (error) throw error;
 
-    const result = await Promise.all(
+    const result = (await Promise.all(
       (orders || []).map(async (o) => {
+        // Only orders whose buyer actually uploaded a proof belong in the queue.
+        if (!(await proofUploaded(o.proof_path))) return null;
         let proofUrl: string | null = null;
         if (o.proof_path) {
           const { data: signed } = await supabase.storage
@@ -48,7 +51,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
           createdAt: o.created_at,
         };
       })
-    );
+    )).filter((o): o is NonNullable<typeof o> => o !== null);
 
     return res.status(200).json({ orders: result });
   } catch (error) {

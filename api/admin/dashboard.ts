@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { approveOrder, rejectOrder } from '../_lib/approveOrder.js';
 import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
+import { proofUploaded } from '../_lib/proof.js';
 
 /**
  * Admin recap dashboard, gated by a simple username/password sent in headers.
@@ -72,8 +73,13 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       .limit(300);
     if (error) throw error;
 
-    const result = await Promise.all(
+    const result = (await Promise.all(
       (orders || []).map(async (o) => {
+        // An awaiting order without an uploaded proof only generated a QR and
+        // never paid — keep it out of the queue. Paid/rejected stay for audit.
+        if (o.status === 'awaiting_verification' && !(await proofUploaded(o.proof_path))) {
+          return null;
+        }
         let proofUrl: string | null = null;
         if (o.proof_path) {
           const { data: signed } = await supabase.storage
@@ -95,7 +101,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
           createdAt: o.created_at,
         };
       })
-    );
+    )).filter((o): o is NonNullable<typeof o> => o !== null);
 
     return res.status(200).json({ orders: result });
   } catch (error) {
