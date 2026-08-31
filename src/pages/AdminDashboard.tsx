@@ -260,10 +260,10 @@ export default function AdminDashboard() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Setujui pembayaran ini?</AlertDialogTitle>
+                              <AlertDialogTitle>Setujui pembayaran {o.buyerName} ({formatPrice(o.amount)})?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Akses ke <strong>{o.productTitle}</strong> akan diberikan ke{' '}
-                                <strong>{o.buyerEmail}</strong> dan link akses akan dikirim melalui WhatsApp. Tindakan ini <strong>tidak bisa dibatalkan</strong>.
+                                <strong>{o.buyerEmail}</strong> dan link akses akan dikirim via WhatsApp. Tindakan ini <strong>tidak bisa dibatalkan</strong>.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

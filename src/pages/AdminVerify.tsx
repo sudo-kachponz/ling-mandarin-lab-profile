@@ -372,7 +372,7 @@ export default function AdminVerify() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Setujui pembayaran ini?</AlertDialogTitle>
+                          <AlertDialogTitle>Setujui pembayaran {o.buyerName} ({formatPrice(o.amount)})?</AlertDialogTitle>
                           <AlertDialogDescription>
                             Akses ke <strong>{o.productTitle}</strong> akan diberikan ke{' '}
                             <strong>{o.buyerEmail}</strong>. Tindakan ini <strong>tidak bisa dibatalkan</strong>.
