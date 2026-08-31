@@ -14,6 +14,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ShieldCheck, ExternalLink, RefreshCw, Search, Clock, MessageCircle } from 'lucide-react';
 
 type AdminOrder = {
@@ -76,6 +84,8 @@ export default function AdminVerify() {
   const [busyRef, setBusyRef] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [resetRef, setResetRef] = useState('');
+  const [rejectingOrder, setRejectingOrder] = useState<AdminOrder | null>(null);
+  const [rejectionNote, setRejectionNote] = useState('');
 
   useEffect(() => {
     const meta = document.createElement('meta');
@@ -132,12 +142,8 @@ export default function AdminVerify() {
     }
   }
 
-  async function act(orderRef: string, action: 'approve' | 'reject') {
+  async function act(orderRef: string, action: 'approve' | 'reject', note?: string) {
     if (!session?.access_token) return;
-    let note: string | undefined;
-    if (action === 'reject') {
-      note = window.prompt('Alasan penolakan (opsional):') || undefined;
-    }
     setBusyRef(orderRef);
     try {
       const res = await fetch('/api/admin/verify', {
@@ -389,7 +395,10 @@ export default function AdminVerify() {
                       variant="outline"
                       disabled={busyRef === o.orderRef}
                       className="border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => act(o.orderRef, 'reject')}
+                      onClick={() => {
+                        setRejectingOrder(o);
+                        setRejectionNote('');
+                      }}
                     >
                       Tolak
                     </Button>
@@ -406,6 +415,41 @@ export default function AdminVerify() {
           );
         })()}
       </div>
+
+      <Dialog open={rejectingOrder !== null} onOpenChange={(open) => { if (!open) setRejectingOrder(null); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Tolak Pembayaran</DialogTitle>
+            <DialogDescription>
+              Berikan alasan penolakan pembayaran untuk <strong>{rejectingOrder?.buyerName}</strong>. Alasan ini bersifat opsional.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              placeholder="Alasan penolakan (opsional), mis. nominal tidak sesuai"
+              value={rejectionNote}
+              onChange={(e) => setRejectionNote(e.target.value)}
+              className="w-full bg-sand/10"
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setRejectingOrder(null)}>
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!rejectingOrder) return;
+                const orderRef = rejectingOrder.orderRef;
+                setRejectingOrder(null);
+                await act(orderRef, 'reject', rejectionNote || undefined);
+              }}
+            >
+              Ya, Tolak Pesanan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { guardPurchase } from '../_lib/guards.js';
 import { notifyTelegram, formatIDR } from '../_lib/telegram.js';
+import { buildDynamicQris } from '../_lib/qris.js';
 import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
 
 // QRIS unique-code space is only 900 slots per product nominal, so orders
@@ -131,6 +132,28 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       throw signError || new Error('Gagal membuat URL unggah');
     }
 
+    // Build the QRIS payload inline (mirrors api/manual/qris.ts) so the browser
+    // renders the QR from this one response instead of making a second
+    // round-trip. Best-effort: if the merchant payload isn't configured or a
+    // dynamic build fails, we omit it and the client falls back to
+    // GET /api/manual/qris — which is untouched and stays the source of truth.
+    let qrisPayload: string | undefined;
+    let qrisIsDynamic = false;
+    if (method === 'qris') {
+      const staticPayload = (process.env.QRIS_STATIC_PAYLOAD || '').trim();
+      if (staticPayload) {
+        qrisPayload = staticPayload;
+        if (process.env.QRIS_DYNAMIC_ENABLED === 'true') {
+          try {
+            qrisPayload = buildDynamicQris(staticPayload, finalAmount);
+            qrisIsDynamic = true;
+          } catch (e) {
+            console.error('[manual/create] dynamic qris build failed, using static:', e);
+          }
+        }
+      }
+    }
+
     await notifyTelegram(
       `🧾 <b>Pesanan baru (${method === 'bca' ? 'Transfer BCA' : 'QRIS'})</b>\n` +
         `Ref: <code>${orderRef}</code>\n` +
@@ -152,6 +175,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       uniqueCode,
       finalAmount,
       expiresAt,
+      ...(qrisPayload ? { qrisPayload, qrisIsDynamic } : {}),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';

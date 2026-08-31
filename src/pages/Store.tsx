@@ -192,11 +192,19 @@ export default function Store() {
       if (!res.ok) throw new Error(data.error || 'Gagal membuat pesanan');
 
       if (paymentMethod === 'qris') {
-        const qres = await fetch(`/api/manual/qris?orderRef=${encodeURIComponent(data.orderRef)}`);
-        const qdata = await qres.json();
-        if (!qres.ok) throw new Error(qdata.error || 'Gagal memuat QRIS');
-        setQrDataUrl(await QRCode.toDataURL(qdata.payload, { width: 320, margin: 1 }));
-        setQrisDynamic(!!qdata.isDynamic);
+        // Prefer the payload create() already returned (one round-trip). Fall
+        // back to the standalone endpoint if it wasn't included.
+        let payload: string | undefined = data.qrisPayload;
+        let isDynamic = !!data.qrisIsDynamic;
+        if (!payload) {
+          const qres = await fetch(`/api/manual/qris?orderRef=${encodeURIComponent(data.orderRef)}`);
+          const qdata = await qres.json();
+          if (!qres.ok) throw new Error(qdata.error || 'Gagal memuat QRIS');
+          payload = qdata.payload;
+          isDynamic = !!qdata.isDynamic;
+        }
+        setQrDataUrl(await QRCode.toDataURL(payload, { width: 320, margin: 1 }));
+        setQrisDynamic(isDynamic);
       } else {
         setQrDataUrl(null);
         setQrisDynamic(false);

@@ -2,6 +2,25 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { RefreshCw, ExternalLink, MessageCircle, Search, ShieldCheck } from 'lucide-react';
 
 type Order = {
@@ -61,6 +80,8 @@ export default function AdminDashboard() {
   const [fetching, setFetching] = useState(false);
   const [search, setSearch] = useState('');
   const [busyRef, setBusyRef] = useState<string | null>(null);
+  const [rejectingOrder, setRejectingOrder] = useState<Order | null>(null);
+  const [rejectionNote, setRejectionNote] = useState('');
 
   const load = useCallback(
     async (u: string, p: string) => {
@@ -96,12 +117,7 @@ export default function AdminDashboard() {
     []
   );
 
-  async function act(o: Order, action: 'approve' | 'reject') {
-    if (action === 'approve' && !window.confirm(`Setujui pembayaran ${o.buyerName} (${formatPrice(o.amount)}) dan buat link akses? Tindakan ini tidak bisa dibatalkan.`)) return;
-    let note: string | undefined;
-    if (action === 'reject') {
-      note = window.prompt('Alasan penolakan (opsional):') || undefined;
-    }
+  async function act(o: Order, action: 'approve' | 'reject', note?: string) {
     setBusyRef(o.orderRef);
     try {
       const res = await fetch('/api/admin/dashboard', {
@@ -236,10 +252,41 @@ export default function AdminDashboard() {
                   <div className="pt-2 flex flex-wrap gap-2">
                     {o.status === 'awaiting_verification' && (
                       <>
-                        <Button size="sm" disabled={busyRef === o.orderRef} onClick={() => act(o, 'approve')} className="bg-green-600 hover:bg-green-700 text-white">
-                          <ShieldCheck className="w-4 h-4 mr-1" /> Setujui &amp; kirim link
-                        </Button>
-                        <Button size="sm" variant="outline" disabled={busyRef === o.orderRef} onClick={() => act(o, 'reject')} className="border-red-200 text-red-600 hover:bg-red-50">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" disabled={busyRef === o.orderRef} className="bg-green-600 hover:bg-green-700 text-white">
+                              <ShieldCheck className="w-4 h-4 mr-1" /> Setujui &amp; kirim link
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Setujui pembayaran ini?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Akses ke <strong>{o.productTitle}</strong> akan diberikan ke{' '}
+                                <strong>{o.buyerEmail}</strong> dan link akses akan dikirim melalui WhatsApp. Tindakan ini <strong>tidak bisa dibatalkan</strong>.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => act(o, 'approve')}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                Ya, setujui
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busyRef === o.orderRef}
+                          onClick={() => {
+                            setRejectingOrder(o);
+                            setRejectionNote('');
+                          }}
+                          className="border-red-200 text-red-600 hover:bg-red-50"
+                        >
                           Tolak
                         </Button>
                       </>
@@ -261,6 +308,41 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      <Dialog open={rejectingOrder !== null} onOpenChange={(open) => { if (!open) setRejectingOrder(null); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Tolak Pembayaran</DialogTitle>
+            <DialogDescription>
+              Berikan alasan penolakan pembayaran untuk <strong>{rejectingOrder?.buyerName}</strong>. Alasan ini bersifat opsional.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              placeholder="Alasan penolakan (opsional), mis. nominal tidak sesuai"
+              value={rejectionNote}
+              onChange={(e) => setRejectionNote(e.target.value)}
+              className="w-full bg-sand/10"
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setRejectingOrder(null)}>
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!rejectingOrder) return;
+                const order = rejectingOrder;
+                setRejectingOrder(null);
+                await act(order, 'reject', rejectionNote || undefined);
+              }}
+            >
+              Ya, Tolak Pesanan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
