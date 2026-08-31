@@ -37,3 +37,6 @@ env.txt
 
 # RSA keypair for Doku SNAP — never commit private keys
 *.pem
+
+# Native Android WebView shell — we ship a website, not an app
+android/
