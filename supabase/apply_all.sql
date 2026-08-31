@@ -89,9 +89,9 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('ebooks', 'ebooks', false)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('payment-proofs', 'payment-proofs', false)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit)
+VALUES ('payment-proofs', 'payment-proofs', false, 31457280) -- 30 MB
+ON CONFLICT (id) DO UPDATE SET file_size_limit = EXCLUDED.file_size_limit;
 
 -- 7. QRIS auto-unlock bridge audit log ------------------------------------
 CREATE TABLE IF NOT EXISTS public.payment_notifications (

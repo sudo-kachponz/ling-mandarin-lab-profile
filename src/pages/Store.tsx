@@ -16,11 +16,45 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const ACCEPTED: Record<string, string> = {
   'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+  'image/gif': 'gif',
   'application/pdf': 'pdf',
 };
-const MAX_BYTES = 5 * 1024 * 1024;
+// Fallback when the phone/file-manager reports an empty or generic MIME type —
+// otherwise real photos got silently rejected and the submit button stayed
+// stuck disabled (the "tombol gabisa diklik" bug).
+const ACCEPTED_EXT = /\.(jpe?g|png|webp|heic|heif|gif|pdf)$/i;
+const MAX_BYTES = 25 * 1024 * 1024; // phone photos & multi-page PDF scans
+const COMPRESS_OVER = 2 * 1024 * 1024; // downscale images above this so upload stays fast
+const MAX_DIMENSION = 1920;
+
+// Downscale + re-encode large images so a 12 MP phone photo uploads in seconds,
+// not a minute. Returns the original untouched if it can't be decoded (e.g. HEIC
+// on a browser without a decoder) or isn't a raster image we want to re-encode.
+async function maybeCompressImage(file: File): Promise<Blob> {
+  if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.size <= COMPRESS_OVER) {
+    return file;
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.85));
+    return blob && blob.size < file.size ? blob : file; // keep original if bigger
+  } catch {
+    return file; // undecodable (HEIC etc.) — upload original as-is
+  }
+}
 
 type QrisOrder = {
   orderRef: string;
@@ -65,6 +99,7 @@ export default function Store() {
   const [paymentMethod, setPaymentMethod] = useState<'qris' | 'transfer'>('qris');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const checkoutRef = useRef<HTMLDivElement>(null);
+  const proofInputRef = useRef<HTMLInputElement>(null);
 
   // Inline QRIS payment popup (no page navigation, no re-entering data).
   const [qrisOrder, setQrisOrder] = useState<QrisOrder | null>(null);
@@ -195,8 +230,10 @@ export default function Store() {
   const onPickProof = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (!(f.type in ACCEPTED)) return toast.error('Format harus JPG, PNG, WEBP, atau PDF.');
-    if (f.size > MAX_BYTES) return toast.error('Ukuran file maksimal 5 MB.');
+    if (!(f.type in ACCEPTED) && !ACCEPTED_EXT.test(f.name)) {
+      return toast.error('Format harus JPG, PNG, WEBP, HEIC, GIF, atau PDF.');
+    }
+    if (f.size > MAX_BYTES) return toast.error('Ukuran file maksimal 25 MB.');
     setProofFile(f);
     setProofPreview(f.type.startsWith('image/') ? URL.createObjectURL(f) : null);
   };
@@ -206,16 +243,18 @@ export default function Store() {
     try {
       setUploading(true);
       setUploadProgress(5);
+      const body = await maybeCompressImage(proofFile);
+      const contentType = body.type || proofFile.type || 'application/octet-stream';
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', qrisOrder.uploadUrl);
-        xhr.setRequestHeader('Content-Type', proofFile.type);
+        xhr.setRequestHeader('Content-Type', contentType);
         xhr.upload.onprogress = (ev) => {
           if (ev.lengthComputable) setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
         };
         xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload gagal (${xhr.status})`)));
         xhr.onerror = () => reject(new Error('Upload gagal. Cek koneksi Anda.'));
-        xhr.send(proofFile);
+        xhr.send(body);
       });
       setPaidDone(true);
     } catch (err) {
@@ -399,7 +438,7 @@ export default function Store() {
                 <form onSubmit={handleCheckout} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label htmlFor="buyer-name" className="text-sm font-semibold text-foreground">Nama Lengkap</label>
+                      <label htmlFor="buyer-name" className="text-sm font-semibold text-foreground">Nama Lengkap <span className="text-red-500">*</span></label>
                       <input
                         id="buyer-name"
                         type="text"
@@ -412,7 +451,7 @@ export default function Store() {
                     </div>
 
                     <div className="space-y-2">
-                      <label htmlFor="buyer-whatsapp" className="text-sm font-semibold text-foreground">Nomor WhatsApp</label>
+                      <label htmlFor="buyer-whatsapp" className="text-sm font-semibold text-foreground">Nomor WhatsApp <span className="text-red-500">*</span></label>
                       <input
                         id="buyer-whatsapp"
                         type="tel"
@@ -426,7 +465,7 @@ export default function Store() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="buyer-email" className="text-sm font-semibold text-foreground">Alamat Email</label>
+                    <label htmlFor="buyer-email" className="text-sm font-semibold text-foreground">Alamat Email <span className="text-red-500">*</span></label>
                     <input
                       id="buyer-email"
                       type="email"
@@ -584,8 +623,17 @@ export default function Store() {
                 </div>
 
                 <div className="border-t pt-4 mt-1">
-                  <p className="text-sm font-semibold mb-2">Sudah bayar? Unggah bukti</p>
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#6A2B2B]/30 rounded-xl p-4 cursor-pointer hover:bg-sand/20 transition-colors">
+                  <p className="text-sm font-semibold mb-2">Sudah bayar? Unggah bukti <span className="text-red-500">*</span></p>
+                  {/* Explicit ref.click() instead of a <label> wrapping the input:
+                      inside a Radix Dialog the label click gets swallowed by the
+                      focus-scope/scroll-lock on desktop, so no file was picked and
+                      the send button stayed disabled ("gabisa diklik di tab"). */}
+                  <button
+                    type="button"
+                    onClick={() => proofInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full flex flex-col items-center justify-center border-2 border-dashed border-[#6A2B2B]/30 rounded-xl p-4 cursor-pointer hover:bg-sand/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
                     {proofPreview ? (
                       <img src={proofPreview} className="max-h-32 rounded" alt="Preview bukti" />
                     ) : proofFile ? (
@@ -593,11 +641,11 @@ export default function Store() {
                     ) : (
                       <>
                         <Upload className="w-6 h-6 text-[#6A2B2B]/50 mb-1" />
-                        <span className="text-xs text-muted-foreground text-center">Klik untuk unggah (JPG/PNG/WEBP/PDF · maks 5 MB)</span>
+                        <span className="text-xs text-muted-foreground text-center">Klik untuk unggah (JPG/PNG/WEBP/PDF · maks 25 MB)</span>
                       </>
                     )}
-                    <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={onPickProof} disabled={uploading} />
-                  </label>
+                  </button>
+                  <input ref={proofInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={onPickProof} disabled={uploading} />
                   {uploading && (
                     <div className="mt-2">
                       <Progress value={uploadProgress} />
