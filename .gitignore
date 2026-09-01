@@ -40,3 +40,6 @@ env.txt
 
 # Native Android WebView shell — we ship a website, not an app
 android/
+.env*
+supabase/.temp/
+
