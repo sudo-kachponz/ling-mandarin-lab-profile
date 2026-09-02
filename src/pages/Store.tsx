@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import PhoneField from '@/components/PhoneField';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -165,8 +166,9 @@ export default function Store() {
       toast.error("Email tidak valid");
       return;
     }
-    if (!buyerWhatsapp.trim() || buyerWhatsapp.length < 9 || !/^[0-9+]+$/.test(buyerWhatsapp)) {
-      toast.error("Nomor WhatsApp tidak valid (angka saja, min. 9 digit)");
+    const intlWhatsapp = (buyerWhatsapp || '').replace(/\D/g, '');
+    if (intlWhatsapp.length < 9) {
+      toast.error("Nomor WhatsApp tidak valid — pilih negara & isi nomor lengkap");
       return;
     }
 
@@ -184,7 +186,7 @@ export default function Store() {
           productId: targetProduct.id,
           buyerName,
           buyerEmail,
-          buyerWhatsapp,
+          buyerWhatsapp: intlWhatsapp,
           method: paymentMethod === 'qris' ? 'qris' : 'bca',
         }),
       });
@@ -460,14 +462,12 @@ export default function Store() {
 
                     <div className="space-y-2">
                       <label htmlFor="buyer-whatsapp" className="text-sm font-semibold text-foreground">Nomor WhatsApp <span className="text-red-500">*</span></label>
-                      <input
+                      <PhoneField
                         id="buyer-whatsapp"
-                        type="tel"
-                        placeholder="Contoh: 08123456789"
+                        placeholder="Contoh: 0812 3456 789"
                         value={buyerWhatsapp}
-                        onChange={(e) => setBuyerWhatsapp(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6A2B2B]/20 focus:border-[#6A2B2B] transition-all bg-sand/10 text-foreground"
-                        required
+                        onChange={setBuyerWhatsapp}
+                        className="wa-phone-input w-full px-4 py-3 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-[#6A2B2B]/20 focus-within:border-[#6A2B2B] transition-all bg-sand/10 text-foreground"
                       />
                     </div>
                   </div>

@@ -92,6 +92,32 @@ All colors MUST be HSL.
   }
 }
 
+/* react-phone-number-input: match the site's rounded fields (sand bg, brown accents) */
+.wa-phone-input {
+  --PhoneInput-color--focus: hsl(var(--ring));
+  gap: 0.625rem;
+}
+.wa-phone-input .PhoneInputInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: hsl(var(--foreground));
+  font-size: 1rem;
+}
+.wa-phone-input .PhoneInputInput::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+.wa-phone-input .PhoneInputCountry {
+  margin-right: 0.5rem;
+  padding-right: 0.5rem;
+  border-right: 1px solid hsl(var(--border));
+}
+.wa-phone-input .PhoneInputCountryIcon {
+  box-shadow: 0 0 0 1px hsl(var(--border));
+  border-radius: 3px;
+  overflow: hidden;
+}
+
 @layer utilities {
   .animate-chat-wave {
     animation: chat-wave 6s ease-in-out infinite;

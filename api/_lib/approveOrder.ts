@@ -70,6 +70,82 @@ export async function approveOrder(orderRef: string, actor: string): Promise<App
   return { ok: true, accessUrl, alreadyPaid: !!result.alreadyPaid };
 }
 
+/**
+ * Log a manual over-the-counter sale: buyer paid (QRIS/BCA) but their proof
+ * upload failed, so the admin records name + WhatsApp + nominal + method by hand.
+ * Creates the order, settles it (counts toward revenue + grants entitlement),
+ * and returns the reader link to send via WhatsApp. No email is collected —
+ * access is by token, so a unique placeholder satisfies the NOT NULL + the
+ * (buyer_email, product_id) entitlement key.
+ */
+export async function createManualPaidOrder(input: {
+  buyerName: string;
+  buyerWhatsapp: string;
+  amount: number;
+  method: 'qris' | 'bca';
+  actor: string;
+  /** Admin optionally attaches a proof image — if so, we return an upload URL. */
+  hasProof?: boolean;
+}): Promise<
+  | { ok: true; accessUrl: string; alreadyPaid: boolean; uploadUrl?: string }
+  | { ok: false; status: number; error: string }
+> {
+  const supabase = getSupabaseAdmin();
+  // Single-product store — Store.tsx sells products[0]; mirror that here.
+  const { data: product } = await supabase
+    .from('products')
+    .select('id, slug, title')
+    .limit(1)
+    .maybeSingle();
+  if (!product) return { ok: false, status: 500, error: 'Produk belum tersedia.' };
+
+  const orderRef = `LCL-MP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const accessToken = randomUUID();
+  const buyerEmail = `manual-${orderRef.toLowerCase()}@lingchineselab.com`;
+  // Proof is optional; only reserve a path when the admin actually attached one.
+  const proofPath = input.hasProof ? `proofs/${orderRef}` : null;
+
+  // final_amount left null so this row stays out of the active-order unique
+  // nominal index; the dashboard reads `final_amount ?? amount` anyway.
+  const { error: insErr } = await supabase.from('orders').insert({
+    order_ref: orderRef,
+    product_id: product.id,
+    buyer_email: buyerEmail,
+    buyer_name: input.buyerName,
+    buyer_whatsapp: input.buyerWhatsapp,
+    amount: input.amount,
+    payment_method: input.method,
+    status: 'awaiting_verification',
+    access_token: accessToken,
+    proof_path: proofPath,
+    verified_by: input.actor,
+    verified_at: new Date().toISOString(),
+  });
+  if (insErr) return { ok: false, status: 500, error: insErr.message };
+
+  // Settle from awaiting_verification (not 'paid') so the entitlement is granted.
+  const result = await settlePayment({ orderRef, source: 'manual' });
+  if (!result.ok) return { ok: false, status: 500, error: `Gagal mencatat: ${result.reason}` };
+
+  let uploadUrl: string | undefined;
+  if (proofPath) {
+    const { data: signed } = await supabase.storage
+      .from('payment-proofs')
+      .createSignedUploadUrl(proofPath);
+    uploadUrl = signed?.signedUrl;
+  }
+
+  const accessUrl = `${baseUrl()}/read/${product.slug ?? ''}?t=${accessToken}`;
+  await notifyTelegram(
+    `🧾 <b>Pesanan manual dicatat (${input.method === 'bca' ? 'Transfer BCA' : 'QRIS'})</b>\n` +
+      `Ref: <code>${orderRef}</code>\n` +
+      `${product.title} — ${formatIDR(input.amount)}\n` +
+      `${input.buyerName} · WA: ${input.buyerWhatsapp}\n` +
+      `Oleh: ${input.actor}`
+  );
+  return { ok: true, accessUrl, alreadyPaid: false, uploadUrl };
+}
+
 /** Reject an order: flip status + keep the proof for the audit trail. */
 export async function rejectOrder(
   orderRef: string,

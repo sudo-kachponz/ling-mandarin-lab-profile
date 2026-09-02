@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ShieldCheck, ExternalLink, RefreshCw, Search, Clock, MessageCircle } from 'lucide-react';
+import { waPhone } from '@/lib/phone';
 
 type AdminOrder = {
   orderRef: string;
@@ -57,13 +58,6 @@ function whatsappMessage(o: AdminOrder, accessUrl: string) {
     `Kode pesanan: ${o.orderRef}\n\n` +
     `Selamat belajar & terima kasih banyak!`
   );
-}
-
-/** Indonesian mobile → wa.me format: strip non-digits, leading 0 → 62. */
-function waPhone(raw: string) {
-  let d = raw.replace(/\D/g, '');
-  if (d.startsWith('0')) d = '62' + d.slice(1);
-  return d;
 }
 
 function waSendLink(o: AdminOrder, accessUrl: string) {

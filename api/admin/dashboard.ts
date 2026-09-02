@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { approveOrder, rejectOrder } from '../_lib/approveOrder.js';
+import { approveOrder, rejectOrder, createManualPaidOrder } from '../_lib/approveOrder.js';
 import { getSupabaseAdmin, withJsonErrors } from '../_lib/supabaseAdmin.js';
 import { proofUploaded } from '../_lib/proof.js';
 
@@ -27,15 +27,81 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
 
   // Approve / reject — same grant path as /api/admin/verify.
   if (req.method === 'POST') {
-    const { orderRef, action, note } = (req.body || {}) as {
+    const body = (req.body || {}) as {
       orderRef?: string;
       action?: string;
       note?: string;
+      phone?: string;
+      buyerName?: string;
+      buyerWhatsapp?: string;
+      amount?: number | string;
+      method?: string;
+      hasProof?: boolean;
     };
-    if (!orderRef || (action !== 'approve' && action !== 'reject')) {
+    const { orderRef, action, note, phone } = body;
+
+    // Manual over-the-counter sale — no orderRef; we mint one and settle it.
+    if (action === 'manual_create') {
+      const name = String(body.buyerName || '').trim();
+      const wa = String(body.buyerWhatsapp || '').replace(/[^\d+]/g, '');
+      const amount = Math.trunc(Number(body.amount));
+      const method = body.method === 'bca' ? 'bca' : body.method === 'qris' ? 'qris' : null;
+      if (name.length < 2) return res.status(400).json({ error: 'Nama pembeli tidak valid.' });
+      if (wa.replace(/\D/g, '').length < 9) {
+        return res.status(400).json({ error: 'Nomor WhatsApp tidak valid (min. 9 digit).' });
+      }
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return res.status(400).json({ error: 'Nominal tidak valid.' });
+      }
+      if (!method) return res.status(400).json({ error: 'Pilih metode QRIS atau BCA.' });
+      try {
+        const r = await createManualPaidOrder({
+          buyerName: name,
+          buyerWhatsapp: wa,
+          amount,
+          method,
+          hasProof: body.hasProof === true,
+          actor: 'dashboard:' + user,
+        });
+        if (!r.ok) {
+          const f = r as { status: number; error: string };
+          return res.status(f.status).json({ error: f.error });
+        }
+        return res.status(200).json({ ok: true, action: 'manual_create', accessUrl: r.accessUrl, uploadUrl: r.uploadUrl });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Internal Server Error';
+        console.error('[admin/dashboard] manual_create error:', error);
+        return res.status(500).json({ error: message });
+      }
+    }
+
+    if (
+      !orderRef ||
+      (action !== 'approve' && action !== 'reject' && action !== 'update_phone' && action !== 'delete')
+    ) {
       return res.status(400).json({ error: 'Permintaan tidak valid.' });
     }
     try {
+      if (action === 'delete') {
+        // Hard-delete an order; the entitlements FK is ON DELETE CASCADE, so the
+        // buyer's access row goes with it (used to clear test/mistake entries).
+        const { error } = await getSupabaseAdmin().from('orders').delete().eq('order_ref', orderRef);
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(200).json({ ok: true, action: 'delete' });
+      }
+      if (action === 'update_phone') {
+        // Fix a buyer's mistyped WhatsApp number so the access link reaches them.
+        const clean = String(phone || '').replace(/[^\d+]/g, '');
+        if (clean.replace(/\D/g, '').length < 9) {
+          return res.status(400).json({ error: 'Nomor WhatsApp tidak valid (min. 9 digit).' });
+        }
+        const { error } = await getSupabaseAdmin()
+          .from('orders')
+          .update({ buyer_whatsapp: clean })
+          .eq('order_ref', orderRef);
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(200).json({ ok: true, action: 'update_phone', phone: clean });
+      }
       if (action === 'reject') {
         const r = await rejectOrder(orderRef, 'dashboard:' + user, note);
         if (!r.ok) {
@@ -103,7 +169,27 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       })
     )).filter((o): o is NonNullable<typeof o> => o !== null);
 
-    return res.status(200).json({ orders: result });
+    // Today's settled revenue, counted at FIRST approval (paid_at is written once
+    // and never overwritten on resend), split by payment method. Day boundary is
+    // Asia/Jakarta (WIB, UTC+7, no DST) since that's the owner's timezone.
+    const jkt = 7 * 60 * 60 * 1000;
+    const j = new Date(Date.now() + jkt);
+    const startUtc = new Date(
+      Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), j.getUTCDate()) - jkt
+    ).toISOString();
+    const { data: todayPaid } = await supabase
+      .from('orders')
+      .select('payment_method, final_amount, amount')
+      .eq('status', 'paid')
+      .gte('paid_at', startUtc);
+    const today = { qris: 0, bca: 0, qrisCount: 0, bcaCount: 0 };
+    for (const o of todayPaid || []) {
+      const amt = (o.final_amount ?? o.amount ?? 0) as number;
+      if (o.payment_method === 'qris') { today.qris += amt; today.qrisCount++; }
+      else if (o.payment_method === 'bca') { today.bca += amt; today.bcaCount++; }
+    }
+
+    return res.status(200).json({ orders: result, today });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';
     console.error('[admin/dashboard] error:', error);
