@@ -13,17 +13,16 @@ import { Input } from '@/components/ui/input';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker || `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-// Stable ref (module-level) so react-pdf doesn't reload the doc each render.
-// disableAutoFetch stops pdf.js from eagerly downloading the WHOLE book after
-// page 1 — on mobile that background download starved the current page's fetch.
-const PDF_OPTIONS = { disableAutoFetch: true, disableStream: false };
+// Options for PDF.js - enable cMaps for proper font rendering without range-request range bugs on iOS/Safari
+const PDF_OPTIONS = {
+  cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+  cMapPacked: true,
+  standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+};
 
 // Wrapper komponen halaman untuk HTMLFlipBook (wajib pakai forwardRef).
-// `active` = halaman ada dalam jendela baca; hanya yang aktif yang benar-benar
-// dirender oleh pdf.js. Sisanya placeholder ukuran sama → flip tetap mulus tapi
-// tidak men-decode seluruh buku di depan (penyebab utama lemot).
 const PdfPageWrapper = React.forwardRef<HTMLDivElement, { pageNum: number, height: number, active: boolean }>(
   ({ pageNum, height, active }, ref) => {
     return (
@@ -34,7 +33,7 @@ const PdfPageWrapper = React.forwardRef<HTMLDivElement, { pageNum: number, heigh
             renderTextLayer={false}
             renderAnnotationLayer={false}
             className="pointer-events-none flex items-center justify-center w-full h-full [&_.react-pdf__Page__canvas]:!w-full [&_.react-pdf__Page__canvas]:!h-full [&_.react-pdf__Page__canvas]:!object-fill"
-            height={height} // Patokan tinggi dinamis
+            height={height}
           />
         ) : (
           <span className="text-zinc-300 text-xs select-none">Hal {pageNum}</span>
@@ -54,19 +53,19 @@ export default function Read() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessError, setAccessError] = useState<string | null>(null);
-  // Traceable watermark label (orderRef for magic-link buyers, email otherwise).
   const [watermark, setWatermark] = useState<string | null>(null);
-  // Buyer name from the magic-link order, shown in the header of the unique link.
   const [buyerName, setBuyerName] = useState<string | null>(null);
   
-  // State untuk fitur advanced
-  const [viewMode, setViewMode] = useState<'flip' | 'scroll'>(window.innerWidth < 768 ? 'scroll' : 'flip');
-  const [isSinglePageFlip, setIsSinglePageFlip] = useState(window.innerWidth < 768);
+  // Detect touch screens / iPads to select optimal view mode by default
+  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0));
+  const [viewMode, setViewMode] = useState<'flip' | 'scroll'>(
+    (typeof window !== 'undefined' && window.innerWidth < 768) || isTouchDevice ? 'scroll' : 'flip'
+  );
+  const [isSinglePageFlip, setIsSinglePageFlip] = useState((typeof window !== 'undefined' && window.innerWidth < 768) || isTouchDevice);
   const [scale, setScale] = useState(1.0);
   const [currentPageScroll, setCurrentPageScroll] = useState(1);
   const [bookDim, setBookDim] = useState({ width: 450, height: 636 });
   
-  // Advanced Features State
   const [currentPage, setCurrentPage] = useState(1);
   const [bookmarks, setBookmarks] = useState<number[]>([]);
   const [passedQuizzes, setPassedQuizzes] = useState<number[]>([]);
@@ -76,8 +75,6 @@ export default function Read() {
   
   const { user } = useAuth();
   const buyerEmail = user?.email || "Tamu / Guest";
-  // Cap render resolution: phones report DPR 2–3, which makes pdf.js rasterize a
-  // canvas 4–9× the pixels and chokes weaker mobile CPUs. 2 stays sharp for text.
   const pdfDpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2);
   const displayTitle = buyerName || (slug === 'test' ? 'E-Book Ling Chinese Lab Volume I' : slug);
   
@@ -91,7 +88,6 @@ export default function Read() {
   const flipBookRef = useRef<FlipBookApi | null>(null);
 
   useEffect(() => {
-    // Responsive otomatis
     const handleResize = () => {
       const w = Math.min(450, window.innerWidth - 32); 
       setBookDim({ width: w, height: w * (636 / 450) });
@@ -99,7 +95,6 @@ export default function Read() {
     handleResize();
     window.addEventListener('resize', handleResize);
 
-    // ── ROBUST PRIVACY PROTECTION ALGORITHM (Anti-Screenshot / Anti-Snipping Tool) ──
     let overlay: HTMLDivElement | null = null;
     let isBlocked = false;
 
@@ -143,7 +138,6 @@ export default function Read() {
       }, 6000);
     };
 
-    // Ultra-aggressive key interception (Win+Shift+S, PrintScreen, Cmd+Shift+3/4/5, Ctrl+S, Ctrl+P)
     const preventScreenshotKeys = (e: KeyboardEvent) => {
       const isWinShiftS =
         (e.metaKey && e.shiftKey && (e.key === 's' || e.key === 'S' || e.code === 'KeyS')) ||
@@ -166,26 +160,16 @@ export default function Read() {
       }
     };
 
-    // Attach handlers at both capture and bubble phases
     window.addEventListener('keydown', preventScreenshotKeys, { capture: true, passive: false });
     document.addEventListener('keydown', preventScreenshotKeys, { capture: true, passive: false });
     window.addEventListener('keyup', preventScreenshotKeys, { capture: true, passive: false });
     document.addEventListener('contextmenu', (e) => { e.preventDefault(); instantBlock(); });
 
-    // Focus loss monitoring (detect Snipping Tool / macOS Screenshot utility opening)
-    const focusInterval = setInterval(() => {
-      if (!document.hasFocus()) {
-        instantBlock();
-      }
-    }, 50);
-
     const handleVisibility = () => {
       if (document.hidden) instantBlock();
     };
     document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('blur', instantBlock);
 
-    // Watermark dynamic protection
     const targetNode = document.body;
     const observerConfig = { childList: true, subtree: true, attributes: true };
     const observerCallback = (mutationsList: MutationRecord[]) => {
@@ -213,8 +197,6 @@ export default function Read() {
       document.removeEventListener('keydown', preventScreenshotKeys, { capture: true });
       window.removeEventListener('keyup', preventScreenshotKeys, { capture: true });
       document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('blur', instantBlock);
-      clearInterval(focusInterval);
       observer.disconnect();
       if (overlay && overlay.parentNode) {
         overlay.parentNode.removeChild(overlay);
@@ -232,7 +214,9 @@ export default function Read() {
         if (accessTokenParam) {
           let deviceId = localStorage.getItem('reader_device_id');
           if (!deviceId) {
-            deviceId = crypto.randomUUID();
+            deviceId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' 
+              ? crypto.randomUUID() 
+              : `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
             localStorage.setItem('reader_device_id', deviceId);
           }
           const res = await fetch('/api/get-reader-url', {
