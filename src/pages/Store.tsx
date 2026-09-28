@@ -94,6 +94,7 @@ export default function Store() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewPage, setPreviewPage] = useState(1); // 1, 2, 3 = preview pages, 4 = locked purchase page
+  const [videoIdx, setVideoIdx] = useState(0); // 0/1 = slideable radikal explainer videos in top phone
 
   // Checkout form states
   const [buyerName, setBuyerName] = useState('');
@@ -290,111 +291,65 @@ export default function Store() {
               {/* Highlight Section (Video Phone Frame + Copywriting) */}
               <div className="mb-16 grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] bg-white rounded-3xl p-6 md:p-10 shadow-soft border border-[#6A2B2B]/10">
 
-                {/* E-Book Preview in Phone Frame */}
+                {/* Video Penjelasan in Phone Frame (slideable, like homepage) */}
                 <div className="flex justify-center">
                   <div className="relative w-[280px] h-[580px] overflow-hidden rounded-[2.5rem] border-[8px] border-black bg-zinc-950 shadow-xl ring-4 ring-[#6A2B2B]/10 flex flex-col justify-between select-none">
                     {/* Notch */}
                     <div className="absolute top-0 inset-x-0 h-6 bg-black z-30 rounded-b-xl w-32 mx-auto"></div>
 
                     {/* Status/Top Bar */}
-                    <div className="absolute top-8 inset-x-0 flex items-center justify-between px-5 py-2 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-20">
-                      <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Pratinjau E-Book</span>
-                      <span className="text-[10px] text-white/60 font-semibold">
-                        {previewPage <= 3 ? `Hal ${previewPage} dari 3` : 'Selesai'}
-                      </span>
+                    <div className="absolute top-8 inset-x-0 flex items-center justify-between px-5 py-2 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-20 pointer-events-none">
+                      <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Video Penjelasan</span>
+                      <span className="text-[10px] text-white/60 font-semibold">{videoIdx + 1} / 2</span>
                     </div>
 
-                    {/* Slider Content */}
-                    <div className="w-full h-full flex flex-col justify-between pt-14 pb-20 relative">
-                      {previewPage <= 3 ? (
-                        <div className="w-full flex-1 flex items-center justify-center bg-white overflow-hidden p-1">
-                          <Document
-                            file="/Lingchinenese.pdf"
-                            loading={
-                              <div className="flex flex-col items-center justify-center text-zinc-400 p-4">
-                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent border-[#6A2B2B] mb-2" />
-                                <p className="text-[11px] font-medium text-[#6A2B2B]/75">Memuat halaman...</p>
-                              </div>
-                            }
-                            error={
-                              <div className="flex flex-col items-center justify-center text-red-500 p-4 text-center">
-                                <p className="text-xs font-semibold">Gagal memuat pratinjau</p>
-                              </div>
-                            }
-                          >
-                            <Page
-                              pageNumber={previewPage}
-                              width={250}
-                              renderTextLayer={false}
-                              renderAnnotationLayer={false}
-                              className="pointer-events-none shadow-sm"
-                            />
-                          </Document>
-                        </div>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center px-5 text-center bg-gradient-to-b from-[#4A1A1A] to-[#1E0A0A] text-white relative">
-                          <div className="absolute -top-12 -left-12 w-32 h-32 rounded-full bg-[#6A2B2B]/20 blur-2xl"></div>
-                          <div className="absolute -bottom-12 -right-12 w-32 h-32 rounded-full bg-[#6A2B2B]/20 blur-2xl"></div>
-
-                          <div className="w-14 h-14 rounded-full bg-[#E5B869]/20 flex items-center justify-center mb-5 border border-[#E5B869]/30 animate-pulse z-10">
-                            <Lock className="w-6 h-6 text-[#E5B869]" />
-                          </div>
-                          <h4 className="text-lg font-bold tracking-tight mb-2 text-[#E5B869] z-10">Ingin Lanjut Membaca?</h4>
-                          <p className="text-[11px] text-zinc-300 leading-relaxed mb-6 z-10">
-                            Miliki versi lengkap e-book <strong className="text-white">Rahasia Huruf Mandarin (Vol. 1)</strong> untuk membuka 10 radikal utama, langkah penulisan guratan, serta kuis latihan lengkap.
-                          </p>
-                          <Button
-                            onClick={handlePurchaseFromPreview}
-                            className="w-full bg-[#E5B869] hover:bg-[#D4A758] text-[#331111] font-extrabold py-5 text-xs rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] z-10"
-                          >
-                            Beli E-Book Sekarang
-                          </Button>
-                        </div>
-                      )}
+                    {/* Video content — preload="none": hemat bandwidth, download saat play */}
+                    <div className="w-full h-full bg-black">
+                      {[radikalVideo1, radikalVideo2].map((src, i) => (
+                        <video
+                          key={i}
+                          src={src}
+                          controls
+                          playsInline
+                          preload="none"
+                          className={`h-full w-full object-cover ${videoIdx === i ? 'block' : 'hidden'}`}
+                        />
+                      ))}
                     </div>
 
-                    {/* Slider Bottom Controls */}
-                    <div className="absolute bottom-4 inset-x-0 flex flex-col items-center gap-2 px-4 z-20">
-                      {/* Dots indicator */}
+                    {/* Slide arrows (kiri/kanan) */}
+                    {videoIdx > 0 && (
+                      <button
+                        onClick={() => setVideoIdx(v => v - 1)}
+                        className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/70 focus:outline-none"
+                        aria-label="Video sebelumnya"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                    )}
+                    {videoIdx < 1 && (
+                      <button
+                        onClick={() => setVideoIdx(v => v + 1)}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/70 focus:outline-none"
+                        aria-label="Video berikutnya"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    )}
+
+                    {/* Dots indicator */}
+                    <div className="absolute bottom-16 inset-x-0 flex justify-center z-20 pointer-events-auto">
                       <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/5">
-                        {[1, 2, 3, 4].map((p) => (
+                        {[0, 1].map((i) => (
                           <button
-                            key={p}
-                            onClick={() => setPreviewPage(p)}
+                            key={i}
+                            onClick={() => setVideoIdx(i)}
                             className="focus:outline-none transition-all duration-200"
+                            aria-label={`Video ${i + 1}`}
                           >
-                            {p === 4 ? (
-                              <Lock className={`w-2.5 h-2.5 ${previewPage === 4 ? 'text-[#E5B869] scale-125' : 'text-zinc-500 hover:text-zinc-400'}`} />
-                            ) : (
-                              <div className={`w-1.5 h-1.5 rounded-full ${previewPage === p ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'}`} />
-                            )}
+                            <div className={`w-1.5 h-1.5 rounded-full ${videoIdx === i ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'}`} />
                           </button>
                         ))}
-                      </div>
-
-                      {/* Nav buttons */}
-                      <div className="flex items-center justify-between w-full px-2">
-                        {previewPage > 1 ? (
-                          <button
-                            onClick={() => setPreviewPage(prev => prev - 1)}
-                            className="flex items-center gap-1 text-white/80 hover:text-white text-[11px] font-semibold py-1 focus:outline-none"
-                          >
-                            <ChevronLeft className="w-3.5 h-3.5" /> Kembali
-                          </button>
-                        ) : (
-                          <div />
-                        )}
-
-                        {previewPage < 4 ? (
-                          <button
-                            onClick={() => setPreviewPage(prev => prev + 1)}
-                            className="flex items-center gap-1 text-white/80 hover:text-white text-[11px] font-semibold py-1 focus:outline-none ml-auto"
-                          >
-                            Lanjut <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        ) : (
-                          <div />
-                        )}
                       </div>
                     </div>
                   </div>
@@ -440,39 +395,14 @@ export default function Store() {
                 </div>
               </div>
 
-              {/* Video: Penjelasan Unsur Radikal Hanzi */}
-              <div className="mb-16">
-                <div className="text-center mb-8">
-                  <div className="inline-block px-4 py-1.5 rounded-full bg-[#6A2B2B]/10 text-[#6A2B2B] text-sm font-bold tracking-wide mb-3">
-                    VIDEO PENJELASAN
-                  </div>
-                  <h2 className="text-2xl md:text-4xl font-black text-foreground leading-tight">
-                    Penjelasan Unsur <span className="text-[#6A2B2B]">Radikal Hanzi</span>
-                  </h2>
-                </div>
-                {/* preload="none": video hanya di-download saat pengunjung klik play (hemat bandwidth) */}
-                <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
-                  {[radikalVideo1, radikalVideo2].map((src, i) => (
-                    <div key={i} className="overflow-hidden rounded-3xl border border-[#6A2B2B]/10 bg-black shadow-soft">
-                      <video
-                        src={src}
-                        controls
-                        playsInline
-                        preload="none"
-                        className="h-full w-full object-contain bg-black"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Checkout Section — hidden pre-launch except for preview emails */}
-              <div ref={checkoutRef} className="max-w-3xl mx-auto bg-white rounded-3xl p-6 md:p-10 shadow-soft border border-[#6A2B2B]/10 scroll-mt-6">
+              <div ref={checkoutRef} className="max-w-5xl mx-auto bg-white rounded-3xl p-6 md:p-10 shadow-soft border border-[#6A2B2B]/10 scroll-mt-6">
                 <div className="text-center mb-8">
                   <h3 className="text-2xl md:text-3xl font-extrabold text-foreground">Pembelian E-Book</h3>
                   <p className="text-muted-foreground mt-2">Isi detail Anda di bawah ini untuk mendapatkan akses e-book</p>
                 </div>
 
+                <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] items-start">
                 <form onSubmit={handleCheckout} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -596,6 +526,117 @@ export default function Store() {
                     )}
                   </Button>
                 </form>
+
+                {/* HP: pratinjau e-book PDF (dipindah dari kotak atas) */}
+                <div className="flex justify-center">
+                  <div className="relative w-[280px] h-[580px] overflow-hidden rounded-[2.5rem] border-[8px] border-black bg-zinc-950 shadow-xl ring-4 ring-[#6A2B2B]/10 flex flex-col justify-between select-none">
+                    {/* Notch */}
+                    <div className="absolute top-0 inset-x-0 h-6 bg-black z-30 rounded-b-xl w-32 mx-auto"></div>
+
+                    {/* Status/Top Bar */}
+                    <div className="absolute top-8 inset-x-0 flex items-center justify-between px-5 py-2 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-20">
+                      <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Pratinjau E-Book</span>
+                      <span className="text-[10px] text-white/60 font-semibold">
+                        {previewPage <= 3 ? `Hal ${previewPage} dari 3` : 'Selesai'}
+                      </span>
+                    </div>
+
+                    {/* Slider Content */}
+                    <div className="w-full h-full flex flex-col justify-between pt-14 pb-20 relative">
+                      {previewPage <= 3 ? (
+                        <div className="w-full flex-1 flex items-center justify-center bg-white overflow-hidden p-1">
+                          <Document
+                            file="/Lingchinenese.pdf"
+                            loading={
+                              <div className="flex flex-col items-center justify-center text-zinc-400 p-4">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent border-[#6A2B2B] mb-2" />
+                                <p className="text-[11px] font-medium text-[#6A2B2B]/75">Memuat halaman...</p>
+                              </div>
+                            }
+                            error={
+                              <div className="flex flex-col items-center justify-center text-red-500 p-4 text-center">
+                                <p className="text-xs font-semibold">Gagal memuat pratinjau</p>
+                              </div>
+                            }
+                          >
+                            <Page
+                              pageNumber={previewPage}
+                              width={250}
+                              renderTextLayer={false}
+                              renderAnnotationLayer={false}
+                              className="pointer-events-none shadow-sm"
+                            />
+                          </Document>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center px-5 text-center bg-gradient-to-b from-[#4A1A1A] to-[#1E0A0A] text-white relative">
+                          <div className="absolute -top-12 -left-12 w-32 h-32 rounded-full bg-[#6A2B2B]/20 blur-2xl"></div>
+                          <div className="absolute -bottom-12 -right-12 w-32 h-32 rounded-full bg-[#6A2B2B]/20 blur-2xl"></div>
+
+                          <div className="w-14 h-14 rounded-full bg-[#E5B869]/20 flex items-center justify-center mb-5 border border-[#E5B869]/30 animate-pulse z-10">
+                            <Lock className="w-6 h-6 text-[#E5B869]" />
+                          </div>
+                          <h4 className="text-lg font-bold tracking-tight mb-2 text-[#E5B869] z-10">Ingin Lanjut Membaca?</h4>
+                          <p className="text-[11px] text-zinc-300 leading-relaxed mb-6 z-10">
+                            Miliki versi lengkap e-book <strong className="text-white">Rahasia Huruf Mandarin (Vol. 1)</strong> untuk membuka 10 radikal utama, langkah penulisan guratan, serta kuis latihan lengkap.
+                          </p>
+                          <Button
+                            onClick={handlePurchaseFromPreview}
+                            className="w-full bg-[#E5B869] hover:bg-[#D4A758] text-[#331111] font-extrabold py-5 text-xs rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] z-10"
+                          >
+                            Beli E-Book Sekarang
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Slider Bottom Controls */}
+                    <div className="absolute bottom-4 inset-x-0 flex flex-col items-center gap-2 px-4 z-20">
+                      {/* Dots indicator */}
+                      <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/5">
+                        {[1, 2, 3, 4].map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setPreviewPage(p)}
+                            className="focus:outline-none transition-all duration-200"
+                          >
+                            {p === 4 ? (
+                              <Lock className={`w-2.5 h-2.5 ${previewPage === 4 ? 'text-[#E5B869] scale-125' : 'text-zinc-500 hover:text-zinc-400'}`} />
+                            ) : (
+                              <div className={`w-1.5 h-1.5 rounded-full ${previewPage === p ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'}`} />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Nav buttons */}
+                      <div className="flex items-center justify-between w-full px-2">
+                        {previewPage > 1 ? (
+                          <button
+                            onClick={() => setPreviewPage(prev => prev - 1)}
+                            className="flex items-center gap-1 text-white/80 hover:text-white text-[11px] font-semibold py-1 focus:outline-none"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5" /> Kembali
+                          </button>
+                        ) : (
+                          <div />
+                        )}
+
+                        {previewPage < 4 ? (
+                          <button
+                            onClick={() => setPreviewPage(prev => prev + 1)}
+                            className="flex items-center gap-1 text-white/80 hover:text-white text-[11px] font-semibold py-1 focus:outline-none ml-auto"
+                          >
+                            Lanjut <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <div />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
               </div>
         </div>
 
