@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Nude Pastel Palette - Base Colors */
+    --cream: 37 30% 93%;           /* #F5F5EB */
+    --sand: 34 23% 90%;            /* #EFE7DA */
+    --beige: 31 15% 79%;           /* #C1B6A3 */
+    --warm-brown: 25 21% 59%;      /* #B3907A */
+    --light-beige: 43 19% 87%;     /* #E1DACA */
+    
+    /* Main Design System */
+    --background: 37 30% 93%;      /* cream as main bg */
+    --foreground: 25 21% 35%;      /* darker warm brown for text */
+
+    --card: 0 0% 100%;             /* white cards */
+    --card-foreground: 25 21% 35%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 21% 35%;
+
+    --primary: 25 21% 59%;         /* warm-brown */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 34 23% 90%;       /* sand */
+    --secondary-foreground: 25 21% 35%;
+
+    --muted: 43 19% 87%;           /* light-beige */
+    --muted-foreground: 25 21% 50%;
+
+    --accent: 31 15% 79%;          /* beige */
+    --accent-foreground: 25 21% 35%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 31 15% 85%;
+    --input: 31 15% 85%;
+    --ring: 25 21% 59%;
+
+    --radius: 1rem;
+
+    /* Additional tokens */
+    --shadow-soft: 0 4px 20px rgba(181, 144, 122, 0.08);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 25 21% 15%;
+    --foreground: 37 30% 93%;
+
+    --card: 25 21% 18%;
+    --card-foreground: 37 30% 93%;
+
+    --popover: 25 21% 18%;
+    --popover-foreground: 37 30% 93%;
+
+    --primary: 25 21% 59%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 31 15% 25%;
+    --secondary-foreground: 37 30% 93%;
+
+    --muted: 31 15% 25%;
+    --muted-foreground: 31 15% 65%;
+
+    --accent: 31 15% 30%;
+    --accent-foreground: 37 30% 93%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 37 30% 93%;
+
+    --border: 31 15% 25%;
+    --input: 31 15% 25%;
+    --ring: 25 21% 59%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* react-phone-number-input: match the site's rounded fields (sand bg, brown accents) */
+.wa-phone-input {
+  --PhoneInput-color--focus: hsl(var(--ring));
+  gap: 0.625rem;
+}
+.wa-phone-input .PhoneInputInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: hsl(var(--foreground));
+  font-size: 1rem;
+}
+.wa-phone-input .PhoneInputInput::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+.wa-phone-input .PhoneInputCountry {
+  margin-right: 0.5rem;
+  padding-right: 0.5rem;
+  border-right: 1px solid hsl(var(--border));
+}
+.wa-phone-input .PhoneInputCountryIcon {
+  box-shadow: 0 0 0 1px hsl(var(--border));
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+@layer utilities {
+  .animate-chat-wave {
+    animation: chat-wave 6s ease-in-out infinite;
+  }
+
+  .caret-blink {
+    animation: caret-blink 1s steps(1) infinite;
+  }
+
+  @keyframes chat-wave {
+    0%,
+    12% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    35% {
+      opacity: 0.9;
+      transform: translateY(-8px) scale(1.02);
+    }
+    65% {
+      opacity: 0.65;
+      transform: translateY(6px) scale(0.98);
+    }
+    100% {
+      opacity: 0.4;
+      transform: translateY(10px) scale(0.96);
+    }
+  }
+
+  @keyframes caret-blink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+}

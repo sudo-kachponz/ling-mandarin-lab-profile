@@ -1,0 +1,48 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+*.zip
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Env files — ignore all, but keep the committed template
+.env
+.env.*
+!.env.example
+env.txt
+
+
+# Vercel & local tooling
+.vercel
+.claude/settings.local.json
+
+# RSA keypair for Doku SNAP — never commit private keys
+*.pem
+
+# Native Android WebView shell — we ship a website, not an app
+android/
+.env*
+supabase/.temp/
+
+
+# Claude optimization temp
+.tmp-opt/

@@ -1,0 +1,134 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { decideDeviceAccess } from './_lib/deviceLock.js';
+import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
+
+const MAX_DEVICES = 2; // phone + laptop
+
+async function signPdf(
+  pdfPath: string,
+  res: VercelResponse,
+  extra: Record<string, unknown> = {}
+) {
+  const supabase = getSupabaseAdmin();
+  // 6h: pdf.js fetches byte-ranges over the whole reading session on this one
+  // URL, so a 60s expiry died mid-read → "network error". Watermark + device
+  // lock already bound the link, so a longer window is safe.
+  const { data, error } = await supabase.storage
+    .from('ebooks')
+    .createSignedUrl(pdfPath, 60 * 60 * 6);
+  if (error || !data) {
+    return res.status(500).json({ error: 'Failed to generate signed URL' });
+  }
+  return res.status(200).json({ signedUrl: data.signedUrl, ...extra });
+}
+
+export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  const supabase = getSupabaseAdmin();
+  try {
+    const { slug, productId, token, deviceId } = req.body || {};
+
+    // ── No-email access path: a magic-link token bound to <=2 devices ──────────
+    if (token) {
+      if (!deviceId) {
+        return res.status(400).json({ error: 'deviceId is required' });
+      }
+      const { data: order } = await supabase
+        .from('orders')
+        .select('id, order_ref, buyer_email, buyer_name, product_id, status, access_devices')
+        .eq('access_token', token)
+        .maybeSingle();
+
+      if (!order || order.status !== 'paid') {
+        return res.status(403).json({ error: 'Link tidak valid atau pembayaran belum diverifikasi.' });
+      }
+
+      // ponytail: read-modify-write device claim; a tiny race could admit a 4th
+      // device under simultaneous first-opens. Fine at this volume; tighten with
+      // a DB function if it ever matters.
+      const devices: string[] = order.access_devices || [];
+      const decision = decideDeviceAccess(devices, deviceId, MAX_DEVICES);
+      if (decision === 'deny') {
+        return res.status(403).json({
+          error: `Akses e-book ini sudah terdaftar di ${MAX_DEVICES} perangkat. Kalau Anda mengganti perangkat atau membersihkan data browser, hubungi kami dengan menyertakan kode pesanan ${order.order_ref}.`,
+          deviceLimit: true,
+          orderRef: order.order_ref,
+        });
+      }
+      if (decision === 'claim') {
+        const { error: bindErr } = await supabase
+          .from('orders')
+          .update({ access_devices: [...devices, deviceId] })
+          .eq('id', order.id);
+        if (bindErr) return res.status(500).json({ error: 'Gagal mengaktifkan perangkat.' });
+      }
+
+      const { data: product } = await supabase
+        .from('products')
+        .select('pdf_path')
+        .eq('id', order.product_id)
+        .maybeSingle();
+      if (!product?.pdf_path) {
+        return res.status(404).json({ error: 'Product or PDF file not found' });
+      }
+      // Watermark identity for the reader overlay (traceable per buyer).
+      return signPdf(product.pdf_path, res, {
+        watermark: order.order_ref,
+        orderRef: order.order_ref,
+        buyerName: order.buyer_name,
+      });
+    }
+
+    // ── Legacy path: Supabase auth token → entitlement by email ────────────────
+    const authHeader = req.headers.authorization || '';
+    const authToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!authToken) {
+      return res.status(401).json({ error: 'Unauthorized. Access token is required.' });
+    }
+
+    const { data: userData, error: authError } = await supabase.auth.getUser(authToken);
+    if (authError || !userData?.user?.email) {
+      return res.status(401).json({ error: 'Unauthorized. Invalid or expired session token.' });
+    }
+    const verifiedEmail = userData.user.email;
+    const targetIdentifier = slug || productId;
+    if (!targetIdentifier) {
+      return res.status(400).json({ error: 'slug or productId is required' });
+    }
+
+    let { data: product } = await supabase
+      .from('products')
+      .select('id, pdf_path')
+      .eq('slug', targetIdentifier)
+      .maybeSingle();
+    if (!product) {
+      const { data: byId } = await supabase
+        .from('products')
+        .select('id, pdf_path')
+        .eq('id', targetIdentifier)
+        .maybeSingle();
+      product = byId;
+    }
+    if (!product || !product.pdf_path) {
+      return res.status(404).json({ error: 'Product or PDF file not found' });
+    }
+
+    const { data: entitlement } = await supabase
+      .from('entitlements')
+      .select('id')
+      .eq('product_id', product.id)
+      .eq('buyer_email', verifiedEmail)
+      .maybeSingle();
+    if (!entitlement) {
+      return res.status(403).json({ error: 'Forbidden. You do not have access to this product.' });
+    }
+
+    return signPdf(product.pdf_path, res, { watermark: verifiedEmail });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return res.status(500).json({ error: message });
+  }
+});
