@@ -198,6 +198,14 @@ const HeroSection = () => {
               onClick={() => navigate("/store")}
               className="group flex w-full max-w-2xl items-center gap-4 rounded-[1.5rem] bg-maroon p-4 text-left text-white shadow-lift transition-colors hover:bg-maroon-deep sm:gap-5 sm:p-5"
             >
+              {/* Mobile: cover tunggal yang ringkas */}
+              <img
+                src="/ebook-cover.webp"
+                alt="Cover Rahasia Huruf Mandarin"
+                loading="lazy"
+                className="block h-[88px] w-auto shrink-0 rounded-lg shadow-lg ring-1 ring-black/20 sm:hidden"
+              />
+              {/* Desktop: cover + intip halaman (fanned) */}
               <div className="relative hidden h-[124px] w-[112px] shrink-0 sm:block">
                 <img src="/ebook-inside-1.webp" alt="" loading="lazy" className="absolute left-9 top-4 w-16 rotate-[8deg] rounded shadow-lg ring-1 ring-black/10 transition-transform duration-300 group-hover:rotate-[12deg]" />
                 <img src="/ebook-inside-2.webp" alt="" loading="lazy" className="absolute left-1 top-3 w-16 -rotate-[8deg] rounded shadow-lg ring-1 ring-black/10 transition-transform duration-300 group-hover:-rotate-[12deg]" />

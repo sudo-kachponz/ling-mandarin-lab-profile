@@ -464,7 +464,7 @@ export default function Store() {
                       role="radio"
                       aria-checked={active}
                       onClick={() => { setVersion(key); setPreviewPage(1); }}
-                      className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors md:p-3.5 ${
+                      className={`flex min-w-0 items-center gap-2.5 rounded-2xl border-2 p-3 text-left transition-colors sm:gap-3 md:p-3.5 ${
                         active ? 'bg-paper' : 'border-border bg-card hover:border-maroon/25'
                       }`}
                       style={active ? { borderColor: v.accent } : undefined}
