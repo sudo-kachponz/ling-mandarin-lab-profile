@@ -6,6 +6,8 @@ import { BookOpen, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import Navbar from '@/components/Navbar';
+import logoPandaOnly from '@/assets/logoPandaOnly.png';
 
 type LibraryItem = {
   id: string;
@@ -123,17 +125,25 @@ export default function Library() {
   }, [user]);
 
   if (authLoading || (loading && user)) {
-    return <div className="min-h-screen bg-sand flex items-center justify-center font-medium">Memuat Library...</div>;
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background font-medium text-muted-foreground">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-maroon border-t-transparent" />
+        Memuat Library...
+      </div>
+    );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-sand flex flex-col items-center justify-center p-4">
-         <div className="bg-white p-8 rounded-3xl shadow-soft max-w-md w-full text-center border border-border">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <BookOpen className="w-8 h-8 text-primary" />
+      <div className="min-h-screen bg-background">
+       <Navbar />
+       <div className="relative flex flex-col items-center justify-center px-4 py-16">
+         <div aria-hidden className="paper-dots absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+         <div className="panel w-full max-w-md p-8 text-center sm:p-10">
+            <div className="mizige mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-hsk/25">
+              <BookOpen className="relative h-7 w-7 text-maroon" />
             </div>
-            <h2 className="text-2xl font-bold mb-3 text-foreground">Masuk ke Library</h2>
+            <h2 className="mb-3 text-2xl font-bold">Masuk ke Library</h2>
             <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
               Masuk menggunakan email yang Anda gunakan saat membeli E-Book untuk mengakses koleksi rahasia Anda.
             </p>
@@ -146,16 +156,16 @@ export default function Library() {
                   onChange={(e) => setEmailInput(e.target.value)}
                   disabled={isAuthProcessing}
                   required
-                  className="h-14 bg-sand/30 rounded-xl"
+                  className="h-14 rounded-xl border-input bg-paper focus-visible:ring-maroon/30"
                 />
-                <Button type="submit" disabled={isAuthProcessing} className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md">
+                <Button type="submit" disabled={isAuthProcessing} className="h-14 w-full rounded-full bg-maroon text-base font-bold text-white shadow-soft hover:bg-maroon-deep">
                   {isAuthProcessing ? 'Mengirim...' : 'Kirim Kode OTP'}
                 </Button>
               </form>
             ) : (
               <form onSubmit={handleVerifyOtp} className="space-y-4 w-full">
                 <div className="text-sm font-medium text-foreground text-left mb-2 px-1">
-                  Kode 6 digit telah dikirim ke <span className="font-bold text-primary">{emailInput}</span>
+                  Kode 6 digit telah dikirim ke <span className="font-bold text-maroon">{emailInput}</span>
                 </div>
                 <Input 
                   type="text" 
@@ -164,10 +174,10 @@ export default function Library() {
                   onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   disabled={isAuthProcessing}
                   required
-                  className="h-14 bg-sand/30 text-center text-2xl tracking-[0.5em] font-mono font-bold rounded-xl"
+                  className="h-14 rounded-xl border-input bg-paper text-center font-mono text-2xl font-bold tracking-[0.5em] focus-visible:ring-maroon/30"
                   maxLength={6}
                 />
-                <Button type="submit" disabled={isAuthProcessing} className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md">
+                <Button type="submit" disabled={isAuthProcessing} className="h-14 w-full rounded-full bg-maroon text-base font-bold text-white shadow-soft hover:bg-maroon-deep">
                   {isAuthProcessing ? 'Memverifikasi...' : 'Verifikasi & Masuk'}
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => setIsOtpSent(false)} className="w-full text-xs text-muted-foreground mt-2">
@@ -177,22 +187,28 @@ export default function Library() {
             )}
             <div className="mt-6 pt-6 border-t border-dashed">
                <p className="text-xs text-muted-foreground">Belum pernah berbelanja?</p>
-               <Button variant="link" onClick={() => navigate('/store')} className="text-primary mt-1">Jelajahi Store</Button>
+               <Button variant="link" onClick={() => navigate('/store')} className="mt-1 text-maroon">Jelajahi Store</Button>
             </div>
          </div>
+       </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-sand">
-      <div className="bg-cream border-b py-8 px-4 md:px-8 shadow-sm">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="relative border-b border-border/70 px-4 py-10 md:px-8">
+        <div aria-hidden className="paper-dots absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">Library Anda</h1>
-            <p className="text-muted-foreground mt-2">Selamat datang, <span className="font-semibold text-foreground">{user.email}</span></p>
+          <div className="flex items-center gap-4">
+            <img src={logoPandaOnly} alt="" className="hidden h-14 w-auto sm:block" />
+            <div>
+            <h1 className="font-display text-3xl font-bold text-maroon">Library Anda</h1>
+            <p className="text-muted-foreground mt-1.5">Selamat datang, <span className="font-semibold text-ink">{user.email}</span></p>
+            </div>
           </div>
-          <Button variant="outline" size="sm" onClick={signOut} className="w-fit border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+          <Button variant="outline" size="sm" onClick={signOut} className="w-fit rounded-full border-border bg-card text-muted-foreground hover:border-hsk/40 hover:bg-hsk-soft hover:text-hsk">
             <LogOut className="w-4 h-4 mr-2" /> Keluar
           </Button>
         </div>
@@ -200,19 +216,19 @@ export default function Library() {
 
       <div className="max-w-5xl mx-auto py-12 px-4 md:px-8">
         {items.length === 0 ? (
-          <div className="text-center bg-white p-12 rounded-3xl shadow-soft border border-border max-w-2xl mx-auto">
-            <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
-               <BookOpen className="w-10 h-10 text-muted-foreground" />
+          <div className="panel mx-auto max-w-2xl p-10 text-center sm:p-12">
+            <div className="mizige w-20 h-20 rounded-2xl border border-hsk/25 flex items-center justify-center mx-auto mb-6">
+               <BookOpen className="relative w-9 h-9 text-maroon/60" />
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-3">Koleksi Masih Kosong</h3>
+            <h3 className="text-2xl font-bold mb-3">Koleksi Masih Kosong</h3>
             <p className="text-muted-foreground mb-8 text-lg">Anda belum memiliki E-Book di akun ini. Kunjungi Store untuk melihat koleksi materi terbaik kami.</p>
-            <Button onClick={() => navigate('/store')} size="lg" className="rounded-full px-8">Jelajahi Store</Button>
+            <Button onClick={() => navigate('/store')} size="lg" className="h-12 rounded-full bg-maroon px-8 font-bold text-white hover:bg-maroon-deep">Jelajahi Store</Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {items.map((item) => (
-              <div key={item.id} className="bg-white rounded-3xl p-6 shadow-soft border border-border flex flex-col transition hover:shadow-lg hover:-translate-y-1">
-                <div className="aspect-[3/4] bg-sand flex items-center justify-center relative rounded-xl overflow-hidden mb-6">
+              <div key={item.id} className="panel flex flex-col p-5 transition-shadow hover:shadow-lift">
+                <div className="relative mb-5 flex aspect-[3/4] items-center justify-center overflow-hidden rounded-xl bg-secondary ring-1 ring-border">
                   <img 
                     src={item.cover_url || '/coverling.png'} 
                     alt={item.title} 
@@ -220,14 +236,14 @@ export default function Library() {
                   />
                 </div>
                 
-                <h3 className="font-bold text-foreground text-xl mb-3 line-clamp-2 flex-1 leading-snug">{item.title}</h3>
+                <h3 className="mb-3 line-clamp-2 flex-1 text-lg font-bold leading-snug">{item.title}</h3>
                 
-                <p className="text-xs font-medium text-muted-foreground mb-6 bg-muted/30 w-fit px-3 py-1.5 rounded-md">
+                <p className="mb-5 w-fit rounded-md bg-paper px-3 py-1.5 text-xs font-medium text-muted-foreground">
                   Diperoleh: {new Date(item.granted_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
                 </p>
                 
                 <Button 
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md rounded-xl h-12 text-base"
+                  className="h-12 w-full rounded-full bg-maroon text-base font-bold text-white hover:bg-maroon-deep"
                   onClick={() => navigate(`/read/${item.slug}`)}
                 >
                   Baca Sekarang

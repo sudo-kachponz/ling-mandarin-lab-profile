@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { stats } from "@/data/stats";
+import CountUp from "@/components/CountUp";
 import { TrendingUp, Users, Award, ArrowLeft, ArrowRight, Play, Pause, Volume2, VolumeX } from "lucide-react";
 import hskLogo from "@/assets/LogoSertifikat/HSK.svg";
 import tocflLogo from "@/assets/LogoSertifikat/TOCFL.svg";
@@ -327,152 +327,132 @@ const TikTokSection = () => {
   };
 
   return (
-    <section className="bg-[#f7f1ea] py-16 md:py-24">
-      <div className="container px-4 sm:px-6 lg:px-8">
-        <div className="grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
-          {/* Video carousel */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-xl space-y-4">
-              <div className="relative overflow-hidden rounded-3xl border border-border bg-black/80 shadow-lg">
-                {videos.map((video, index) => (
-                  <video
-                    key={video.title}
-                    ref={(el) => {
-                      if (el) {
-                        videoRefs.current[index] = el;
-                      }
-                    }}
-                    src={video.src}
-                    muted={isVideoMuted}
-                    playsInline
-                    loop
-                    className={`h-full w-full object-contain ${activeVideo === index ? "block" : "hidden"}`}
-                    onPlay={() => setIsVideoPlaying(true)}
-                    onPause={() => setIsVideoPlaying(false)}
-                    onEnded={() => setIsVideoPlaying(false)}
-                  />
-                ))}
+    <section className="section bg-paper">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid items-start gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+          {/* Video */}
+          <div className="reveal reveal-left mx-auto w-full max-w-md lg:sticky lg:top-28">
+            {/* Video sudah punya casing panda sendiri — jangan kasih border/bingkai lagi */}
+            <div className="relative">
+              {videos.map((video, index) => (
+                <video
+                  key={video.title}
+                  ref={(el) => {
+                    if (el) {
+                      videoRefs.current[index] = el;
+                    }
+                  }}
+                  src={video.src}
+                  muted={isVideoMuted}
+                  playsInline
+                  loop
+                  preload={index === 0 ? "metadata" : "none"}
+                  className={`h-full w-full object-contain ${activeVideo === index ? "block" : "hidden"}`}
+                  onPlay={() => setIsVideoPlaying(true)}
+                  onPause={() => setIsVideoPlaying(false)}
+                  onEnded={() => setIsVideoPlaying(false)}
+                />
+              ))}
 
-                <div className="absolute inset-0 flex items-center justify-between px-2 sm:px-4">
-                  <button
-                    type="button"
-                    onClick={showPrevVideo}
-                    className="rounded-full bg-white/80 p-2 text-foreground shadow hover:bg-white"
-                    aria-label="Video sebelumnya"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={showNextVideo}
-                    className="rounded-full bg-white/80 p-2 text-foreground shadow hover:bg-white"
-                    aria-label="Video selanjutnya"
-                  >
-                    <ArrowRight className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="absolute bottom-4 left-4 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handlePlayPauseVideo}
-                    className="flex items-center gap-1 rounded-full bg-white/90 px-3 py-2 text-sm font-medium text-foreground shadow"
-                    aria-label={isVideoPlaying ? "Jeda video" : "Putar video"}
-                  >
-                    {isVideoPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                    {isVideoPlaying ? "Pause" : "Play"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleVideoMute}
-                    className="flex items-center gap-1 rounded-full bg-white/90 px-3 py-2 text-sm font-medium text-foreground shadow"
-                    aria-label={isVideoMuted ? "Aktifkan suara" : "Matikan suara"}
-                  >
-                    {isVideoMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                    {isVideoMuted ? "Sound off" : "Sound on"}
-                  </button>
-                  <span className="rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">
-                    {videos[activeVideo].title} / {totalVideos}
-                  </span>
-                </div>
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 sm:px-3">
+                <button
+                  type="button"
+                  onClick={showPrevVideo}
+                  className="pointer-events-auto rounded-full bg-paper/85 p-2 text-ink shadow-sm backdrop-blur transition-colors hover:bg-paper"
+                  aria-label="Video sebelumnya"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={showNextVideo}
+                  className="pointer-events-auto rounded-full bg-paper/85 p-2 text-ink shadow-sm backdrop-blur transition-colors hover:bg-paper"
+                  aria-label="Video selanjutnya"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <a
-                  href="https://www.instagram.com/lingchineselab?igsh=MXNmMnBscmR6aHFlaw=="
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-foreground shadow-sm hover:bg-primary/10"
+              <div className="absolute inset-x-3 bottom-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePlayPauseVideo}
+                  className="flex items-center gap-1.5 rounded-full bg-paper/90 px-3 py-1.5 text-xs font-semibold text-ink shadow-sm backdrop-blur"
+                  aria-label={isVideoPlaying ? "Jeda video" : "Putar video"}
                 >
-                  <img src={igIcon} alt="Instagram" className="h-5 w-5" />
-                  <span>@lingchineselab</span>
-                </a>
-                <a
-                  href="https://www.tiktok.com/@lingchineselab?_r=1&_t=ZS-93rcJMWKTLg"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-foreground shadow-sm hover:bg-primary/10"
+                  {isVideoPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                  {isVideoPlaying ? "Pause" : "Play"}
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleVideoMute}
+                  className="flex items-center gap-1.5 rounded-full bg-paper/90 px-3 py-1.5 text-xs font-semibold text-ink shadow-sm backdrop-blur"
+                  aria-label={isVideoMuted ? "Aktifkan suara" : "Matikan suara"}
                 >
-                  <img src={tiktokIcon} alt="TikTok" className="h-5 w-5" />
-                  <span>@lingchineselab</span>
-                </a>
+                  {isVideoMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                  {isVideoMuted ? "Sound off" : "Sound on"}
+                </button>
+                <span className="ml-auto rounded-full bg-ink/70 px-2.5 py-1 text-[11px] font-semibold text-white">
+                  {activeVideo + 1} / {totalVideos}
+                </span>
               </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <a href="https://www.instagram.com/lingchineselab?igsh=MXNmMnBscmR6aHFlaw==" target="_blank" rel="noopener noreferrer" className="chip">
+                <img src={igIcon} alt="Instagram" className="h-4 w-4" />
+                <span>@lingchineselab</span>
+              </a>
+              <a href="https://www.tiktok.com/@lingchineselab?_r=1&_t=ZS-93rcJMWKTLg" target="_blank" rel="noopener noreferrer" className="chip">
+                <img src={tiktokIcon} alt="TikTok" className="h-4 w-4" />
+                <span>@lingchineselab</span>
+              </a>
             </div>
           </div>
 
-          {/* Stats and certificates */}
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
-                Kenapa Pilih Ling Chinese Lab?
-              </p>
-              <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
+          {/* Alasan, angka, dan sertifikat */}
+          <div className="space-y-10">
+            <div className="reveal">
+              <span aria-hidden className="mizige mb-4 flex h-11 w-11 items-center justify-center rounded-[8px] border border-hsk/40 font-hanzi text-2xl font-semibold leading-none text-maroon">选</span>
+              <h2 className="section-title">Kenapa Pilih Ling Chinese Lab?</h2>
+              <p className="mt-3 font-display text-xl font-bold leading-snug text-maroon md:text-2xl">
                 Belajar dengan metode yang terbukti efektif dan menyenangkan
-              </h2>
-              <p className="text-base text-muted-foreground">
+              </p>
+              <p className="section-lead">
                 Dibimbing langsung oleh laoshi yang aktif membagikan ilmu lewat video pembelajaran dan
                 pengalaman mengajar privat dari berbagai level HSK dan TOCFL.
               </p>
             </div>
 
-            <div className="flex flex-col gap-4">
+            <dl className="grid grid-cols-1 divide-y divide-border overflow-hidden rounded-[1.5rem] border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               {stats.map((stat, index) => {
                 const Icon = icons[index as keyof typeof icons];
                 return (
-                  <Card
-                    key={stat.id}
-                    className="rounded-3xl border border-border bg-white/80 shadow-sm transition hover:shadow-md"
-                  >
-                    <CardContent className="flex items-center gap-4 p-5">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                        <Icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                        <p className="text-lg font-semibold text-foreground/90">{stat.label}</p>
-                        <p className="text-sm text-muted-foreground">{stat.description}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div key={stat.id} className={`reveal reveal-zoom reveal-d${index + 1} flex gap-4 p-5 sm:flex-col sm:gap-3`}>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon/[0.07]">
+                      <Icon className="h-5 w-5 text-maroon" />
+                    </span>
+                    <div>
+                      <dd className="font-display text-3xl font-bold leading-none text-ink"><CountUp value={stat.value} /></dd>
+                      <dt className="mt-2 text-sm font-bold leading-snug text-foreground">{stat.label}</dt>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{stat.description}</p>
+                    </div>
+                  </div>
                 );
               })}
-            </div>
+            </dl>
 
-            <div className="rounded-[30px] border border-border bg-white/85 p-6 shadow-md backdrop-blur">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="panel p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                    Sertifikat HSK & TOCFL
-                  </p>
-                  <h3 className="text-xl font-bold text-foreground">
-                    Bukti kompetensi para laoshi bersertifikat
-                  </h3>
+                  <p className="text-sm font-semibold text-muted-foreground">Sertifikat HSK & TOCFL</p>
+                  <h3 className="mt-1 text-xl font-bold">Bukti kompetensi para laoshi bersertifikat</h3>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   <button
                     type="button"
                     onClick={showPrev}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-primary/10"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-paper text-ink transition-colors hover:border-maroon/40 hover:bg-maroon/5"
                     aria-label="Sertifikat sebelumnya"
                   >
                     <ArrowLeft className="h-4 w-4" />
@@ -480,7 +460,7 @@ const TikTokSection = () => {
                   <button
                     type="button"
                     onClick={showNext}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-primary/10"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-paper text-ink transition-colors hover:border-maroon/40 hover:bg-maroon/5"
                     aria-label="Sertifikat selanjutnya"
                   >
                     <ArrowRight className="h-4 w-4" />
@@ -489,7 +469,7 @@ const TikTokSection = () => {
               </div>
 
               <div
-                className="relative mt-5 h-[360px] overflow-hidden rounded-2xl border border-dashed border-border bg-muted/30 p-4 sm:h-[420px]"
+                className="relative mt-5 h-[380px] overflow-hidden rounded-2xl bg-secondary/60 sm:h-[440px]"
                 onMouseEnter={handleHoverStart}
                 onMouseLeave={handleHoverEnd}
                 onClick={handleClickPause}
@@ -499,74 +479,77 @@ const TikTokSection = () => {
                 role="region"
                 aria-roledescription="Sertifikat laoshi"
               >
-                {certificates.map((certificate, index) => (
-                  <div
-                    key={`${certificate.mentor}-${certificate.type}`}
-                    className={`absolute inset-0 transition-all duration-700 ${activeCertificate === index
-                      ? "translate-y-0 opacity-100"
-                      : "pointer-events-none translate-y-8 opacity-0"
+                {certificates.map((certificate, index) => {
+                  const isActive = activeCertificate === index;
+                  return (
+                    <div
+                      key={`${certificate.mentor}-${certificate.type}-${index}`}
+                      aria-hidden={!isActive}
+                      className={`absolute inset-0 p-3 transition-opacity duration-500 ${
+                        isActive ? "opacity-100" : "pointer-events-none opacity-0"
                       }`}
-                  >
-                    <div className="flex h-full flex-col gap-4 rounded-2xl bg-white/90 p-4 shadow">
-                      <div className="relative flex-1 overflow-hidden rounded-xl border border-border bg-muted/20">
-                        <div className="absolute right-3 top-3 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-md">
-                          <img
-                            src={certificateLogos[certificate.type]}
-                            alt={`Logo sertifikat ${certificate.type}`}
-                            className="h-8 w-8"
-                            loading="lazy"
-                          />
+                    >
+                      <div className="flex h-full flex-col gap-3 rounded-xl bg-card p-3 shadow-sm">
+                        <div className="relative flex-1 overflow-hidden rounded-lg border border-border bg-paper">
+                          <div className="absolute right-2.5 top-2.5 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-card/95 shadow-sm">
+                            <img src={certificateLogos[certificate.type]} alt={`Logo sertifikat ${certificate.type}`} className="h-7 w-7" loading="lazy" />
+                          </div>
+                          {/* Hanya slide aktif yang memuat PDF — hemat memori & bandwidth */}
+                          {certificate.previewType === "pdf" ? (
+                            isActive ? (
+                              <object
+                                data={certificate.preview}
+                                type="application/pdf"
+                                className="h-full w-full"
+                                aria-label={`Preview PDF sertifikat ${certificate.mentor}`}
+                              >
+                                <div className="flex h-full items-center justify-center p-4 text-center text-sm text-muted-foreground">
+                                  Preview PDF tidak dapat dimuat. Klik tombol di bawah untuk membuka berkas.
+                                </div>
+                              </object>
+                            ) : null
+                          ) : (
+                            <img
+                              src={certificate.preview}
+                              alt={`Preview sertifikat ${certificate.mentor}`}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          )}
                         </div>
-                        {certificate.previewType === "pdf" ? (
-                          <object
-                            data={certificate.preview}
-                            type="application/pdf"
-                            className="h-full w-full"
-                            aria-label={`Preview PDF sertifikat ${certificate.mentor}`}
+                        <div className="flex flex-col items-center justify-between gap-3 px-1 sm:flex-row">
+                          <div className="text-center sm:text-left">
+                            <p className="font-display text-base font-bold text-ink">{certificate.mentor}</p>
+                            <p className="text-xs text-muted-foreground">{certificate.description}</p>
+                          </div>
+                          <a
+                            href={certificate.src}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            tabIndex={isActive ? 0 : -1}
+                            className="shrink-0 rounded-full border border-maroon/30 px-4 py-2 text-sm font-semibold text-maroon transition-colors hover:bg-maroon/5"
                           >
-                            <div className="flex h-full items-center justify-center p-4 text-center text-sm text-muted-foreground">
-                              Preview PDF tidak dapat dimuat. Klik tombol di bawah untuk membuka berkas.
-                            </div>
-                          </object>
-                        ) : (
-                          <img
-                            src={certificate.preview}
-                            alt={`Preview sertifikat ${certificate.mentor}`}
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        )}
+                            Lihat sertifikat asli
+                          </a>
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <p className="text-lg font-semibold text-foreground">{certificate.mentor}</p>
-                        <p className="text-sm text-muted-foreground">{certificate.description}</p>
-                      </div>
-                      <a
-                        href={certificate.src}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-full border border-primary/40 px-4 py-2 text-center text-sm font-medium text-primary transition hover:bg-primary/10"
-                      >
-                        Lihat sertifikat asli
-                      </a>
                     </div>
-                  </div>
-                ))}
-
-                <div className="absolute bottom-0 left-1/2 flex -translate-x-1/2 gap-2">
-                  {certificates.map((certificate, index) => (
-                    <button
-                      key={`${certificate.mentor}-${certificate.type}-dot`}
-                      type="button"
-                      onClick={() => selectCertificate(index)}
-                      className={`h-2.5 rounded-full transition ${activeCertificate === index ? "w-8 bg-primary" : "w-2.5 bg-muted-foreground/40"
-                        }`}
-                      aria-label={`Tampilkan sertifikat ${certificate.mentor}`}
-                    />
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-              <p className="mt-4 text-center text-xs text-muted-foreground">
+
+              <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+                {certificates.map((certificate, index) => (
+                  <button
+                    key={`${certificate.mentor}-${certificate.type}-dot-${index}`}
+                    type="button"
+                    onClick={() => selectCertificate(index)}
+                    className={`h-1.5 rounded-full transition-all ${activeCertificate === index ? "w-6 bg-maroon" : "w-1.5 bg-maroon/20 hover:bg-maroon/40"}`}
+                    aria-label={`Tampilkan sertifikat ${certificate.mentor}`}
+                  />
+                ))}
+              </div>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
                 Slider berhenti ketika disentuh atau diarahkan kursor, dan akan berjalan lagi otomatis setelah 5
                 detik.
               </p>

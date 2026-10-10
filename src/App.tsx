@@ -17,16 +17,21 @@ import RefundPolicy from "./pages/RefundPolicy";
 import AdminVerify from "./pages/AdminVerify";
 import AdminDashboard from "./pages/AdminDashboard";
 import Faq from "./pages/Faq";
+import { useScrollReveal } from "./hooks/useScrollReveal";
+import ScrollPanda from "./components/ScrollPanda";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  useScrollReveal(); // scroll-triggered motion for any .reveal element
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollPanda />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/tentang" element={<Tentang />} />
@@ -47,7 +52,8 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 
 export default App;

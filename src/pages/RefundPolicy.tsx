@@ -8,13 +8,13 @@ const RefundPolicy = () => {
   return (
     <div className="min-h-screen bg-background w-full flex flex-col">
       <Navbar />
-      <main className="flex-1 pt-20">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link to="/" className="hover:text-foreground transition-colors">Beranda</Link>
+      <main className="flex-1">
+        <div className="container mx-auto px-4 pt-8 sm:px-6 lg:px-8">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Link to="/" className="transition-colors hover:text-maroon">Beranda</Link>
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-foreground font-medium">Kebijakan Pengembalian Dana (Refund)</span>
-          </div>
+          </nav>
         </div>
         <LegalPoliciesSection />
       </main>

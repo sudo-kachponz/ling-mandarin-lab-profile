@@ -2,80 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Design system. Palette tetap sama (nude / earthy pastel) — hanya dirapikan
+   jadi token supaya konsisten di semua halaman. Semua warna HSL. */
 
 @layer base {
   :root {
-    /* Nude Pastel Palette - Base Colors */
-    --cream: 37 30% 93%;           /* #F5F5EB */
-    --sand: 34 23% 90%;            /* #EFE7DA */
-    --beige: 31 15% 79%;           /* #C1B6A3 */
+    /* Nude Pastel Palette - Base Colors (tidak berubah) */
+    --cream: 37 30% 93%;           /* #F2EDE4 */
+    --sand: 34 23% 90%;            /* #EBE5DC */
+    --beige: 31 15% 79%;           /* #D0C7BC */
     --warm-brown: 25 21% 59%;      /* #B3907A */
-    --light-beige: 43 19% 87%;     /* #E1DACA */
-    
-    /* Main Design System */
-    --background: 37 30% 93%;      /* cream as main bg */
-    --foreground: 25 21% 35%;      /* darker warm brown for text */
+    --light-beige: 43 19% 87%;     /* #E5E0D5 */
 
-    --card: 0 0% 100%;             /* white cards */
+    /* Aksen yang sudah dipakai di halaman e-book, sekarang jadi token */
+    --maroon: 0 42% 29%;           /* #6A2B2B */
+    --maroon-deep: 0 42% 22%;      /* #522121 */
+    --gold: 39 69% 66%;            /* #E5B869 */
+    --paper: 40 47% 97%;           /* kertas hangat, panel terang */
+    --ink: 25 24% 24%;             /* teks judul */
+
+    /* Kode warna HSK (China) & TOCFL (Taiwan) — dilembutkan agar serasi pastel */
+    --hsk: 3 52% 52%;
+    --hsk-soft: 6 60% 95%;
+    --tocfl: 213 38% 44%;
+    --tocfl-soft: 210 45% 95%;
+
+    /* Main Design System */
+    --background: 37 30% 93%;
+    --foreground: 25 21% 35%;
+
+    --card: 40 47% 98.5%;
     --card-foreground: 25 21% 35%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 25 21% 35%;
 
-    --primary: 25 21% 59%;         /* warm-brown */
+    --primary: 25 21% 59%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 34 23% 90%;       /* sand */
+    --secondary: 34 23% 90%;
     --secondary-foreground: 25 21% 35%;
 
-    --muted: 43 19% 87%;           /* light-beige */
-    --muted-foreground: 25 21% 50%;
+    --muted: 43 19% 87%;
+    --muted-foreground: 25 16% 45%;
 
-    --accent: 31 15% 79%;          /* beige */
+    --accent: 31 15% 79%;
     --accent-foreground: 25 21% 35%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 31 15% 85%;
-    --input: 31 15% 85%;
+    --border: 31 18% 84%;
+    --input: 31 18% 82%;
     --ring: 25 21% 59%;
 
     --radius: 1rem;
 
-    /* Additional tokens */
-    --shadow-soft: 0 4px 20px rgba(181, 144, 122, 0.08);
+    --shadow-soft: 0 1px 2px rgba(106, 75, 55, 0.05), 0 8px 24px -12px rgba(106, 75, 55, 0.18);
+    --shadow-lift: 0 2px 4px rgba(106, 75, 55, 0.06), 0 18px 40px -18px rgba(106, 75, 55, 0.28);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
     --background: 25 21% 15%;
     --foreground: 37 30% 93%;
-
     --card: 25 21% 18%;
     --card-foreground: 37 30% 93%;
-
     --popover: 25 21% 18%;
     --popover-foreground: 37 30% 93%;
-
     --primary: 25 21% 59%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 31 15% 25%;
     --secondary-foreground: 37 30% 93%;
-
     --muted: 31 15% 25%;
     --muted-foreground: 31 15% 65%;
-
     --accent: 31 15% 30%;
     --accent-foreground: 37 30% 93%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 37 30% 93%;
-
     --border: 31 15% 25%;
     --input: 31 15% 25%;
     --ring: 25 21% 59%;
@@ -87,14 +91,114 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display text-ink;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--maroon));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: hsl(var(--gold) / 0.45);
+    color: hsl(var(--ink));
   }
 }
 
-/* react-phone-number-input: match the site's rounded fields (sand bg, brown accents) */
+@layer components {
+  /* Judul section yang konsisten di semua halaman */
+  .section {
+    @apply py-16 md:py-24;
+  }
+  .section-title {
+    @apply font-display text-[1.75rem] leading-tight font-bold text-ink md:text-[2.25rem];
+  }
+  .section-lead {
+    @apply mt-3 text-base leading-relaxed text-muted-foreground md:text-lg;
+  }
+
+  /* Panel kertas: permukaan utama kartu besar */
+  .panel {
+    @apply rounded-[1.75rem] border border-border/80 bg-card;
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Hanzi: pakai font serif CJK bawaan sistem (tanpa unduhan tambahan) */
+  .font-hanzi {
+    font-family: "Noto Serif SC", "Noto Serif TC", "Source Han Serif", "Songti SC", "STSong", "SimSun", "PMingLiU", serif;
+  }
+
+  /* 米字格 — kotak latihan menulis hanzi. Dipakai sebagai motif bingkai. */
+  .mizige {
+    position: relative;
+    background-color: hsl(var(--paper));
+    background-image:
+      linear-gradient(hsl(var(--hsk) / 0.22) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--hsk) / 0.22) 1px, transparent 1px);
+    background-size: 50% 50%;
+    background-position: center;
+  }
+  .mizige::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(45deg, transparent calc(50% - 0.5px), hsl(var(--hsk) / 0.14) 50%, transparent calc(50% + 0.5px)),
+      linear-gradient(-45deg, transparent calc(50% - 0.5px), hsl(var(--hsk) / 0.14) 50%, transparent calc(50% + 0.5px));
+  }
+  .mizige-dashed {
+    background-image:
+      repeating-linear-gradient(90deg, hsl(var(--hsk) / 0.25) 0 6px, transparent 6px 12px),
+      repeating-linear-gradient(0deg, hsl(var(--hsk) / 0.25) 0 6px, transparent 6px 12px);
+    background-size: 100% 1px, 1px 100%;
+    background-repeat: no-repeat;
+    background-position: center, center;
+  }
+
+  /* Kertas bertitik halus untuk latar section */
+  .paper-dots {
+    background-image: radial-gradient(hsl(var(--warm-brown) / 0.16) 1px, transparent 1.2px);
+    background-size: 22px 22px;
+  }
+
+  /* Cap stempel (印章) kecil untuk label sertifikasi */
+  .seal {
+    @apply inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold;
+    border-color: hsl(var(--maroon) / 0.35);
+    color: hsl(var(--maroon));
+    background: hsl(var(--maroon) / 0.05);
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary/50 hover:bg-secondary;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-input bg-[hsl(var(--paper))] px-4 py-3 text-foreground placeholder:text-muted-foreground/70 transition-colors focus:outline-none focus:border-[hsl(var(--maroon))] focus:ring-2 focus:ring-[hsl(var(--maroon)/0.15)];
+  }
+}
+
+/* react-phone-number-input: ikut gaya field */
 .wa-phone-input {
-  --PhoneInput-color--focus: hsl(var(--ring));
+  --PhoneInput-color--focus: hsl(var(--maroon));
   gap: 0.625rem;
 }
 .wa-phone-input .PhoneInputInput {
@@ -105,7 +209,7 @@ All colors MUST be HSL.
   font-size: 1rem;
 }
 .wa-phone-input .PhoneInputInput::placeholder {
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--muted-foreground) / 0.7);
 }
 .wa-phone-input .PhoneInputCountry {
   margin-right: 0.5rem;
@@ -119,6 +223,13 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-lift {
+    box-shadow: var(--shadow-lift);
+  }
+
   .animate-chat-wave {
     animation: chat-wave 6s ease-in-out infinite;
   }
@@ -127,34 +238,75 @@ All colors MUST be HSL.
     animation: caret-blink 1s steps(1) infinite;
   }
 
+  /* Satu-satunya entrance: hero saat halaman dibuka */
+  .rise {
+    animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .rise-1 { animation-delay: 60ms; }
+  .rise-2 { animation-delay: 140ms; }
+  .rise-3 { animation-delay: 220ms; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
   @keyframes chat-wave {
-    0%,
-    12% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-    35% {
-      opacity: 0.9;
-      transform: translateY(-8px) scale(1.02);
-    }
-    65% {
-      opacity: 0.65;
-      transform: translateY(6px) scale(0.98);
-    }
-    100% {
-      opacity: 0.4;
-      transform: translateY(10px) scale(0.96);
-    }
+    0%, 12% { opacity: 1; transform: translateY(0) scale(1); }
+    35% { opacity: 0.9; transform: translateY(-8px) scale(1.02); }
+    65% { opacity: 0.65; transform: translateY(6px) scale(0.98); }
+    100% { opacity: 0.4; transform: translateY(10px) scale(0.96); }
   }
 
   @keyframes caret-blink {
-    0%,
-    49% {
-      opacity: 1;
-    }
-    50%,
-    100% {
-      opacity: 0;
-    }
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+
+  /* Scroll-triggered motion — elemen muncul saat masuk viewport (lihat useScrollReveal) */
+  .reveal {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  /* Varian: geser dari samping & zoom halus */
+  .reveal-left { transform: translateX(-28px); }
+  .reveal-right { transform: translateX(28px); }
+  .reveal-zoom { transform: scale(0.94); }
+  .reveal-left.is-visible,
+  .reveal-right.is-visible,
+  .reveal-zoom.is-visible { transform: none; }
+  /* Stagger */
+  .reveal-d1 { transition-delay: 90ms; }
+  .reveal-d2 { transition-delay: 180ms; }
+  .reveal-d3 { transition-delay: 270ms; }
+  .reveal-d4 { transition-delay: 360ms; }
+}
+
+/* Hormati pengaturan "kurangi gerakan": marquee berhenti & bisa digeser manual */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Jangan sembunyikan konten kalau user minta kurangi gerakan */
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .marquee-viewport {
+    overflow-x: auto !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+  .marquee-track {
+    animation: none !important;
   }
 }

@@ -3,6 +3,7 @@ import Footer from '@/components/Footer';
 import { Link } from 'react-router-dom';
 import { ChevronRight, MessageCircle, Mail, Clock } from 'lucide-react';
 import { whatsappUrl } from '@/data/stats';
+import SectionHeading from '@/components/SectionHeading';
 import {
   Accordion,
   AccordionContent,
@@ -37,7 +38,7 @@ const faqs: { q: string; a: React.ReactNode }[] = [
       <>
         Karena produk bersifat digital dan akses langsung diberikan, pembelian pada dasarnya tidak dapat direfund. Rincian
         selengkapnya ada di{' '}
-        <Link to="/refund-policy" className="text-primary underline">
+        <Link to="/refund-policy" className="text-maroon underline underline-offset-2">
           Kebijakan Pengembalian Dana
         </Link>
         .
@@ -66,43 +67,45 @@ const Faq = () => {
   return (
     <div className="min-h-screen bg-background w-full flex flex-col">
       <Navbar />
-      <main className="flex-1 pt-20">
-        <div className="container mx-auto px-4 py-6 max-w-3xl">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link to="/" className="hover:text-foreground transition-colors">Beranda</Link>
+      <main className="flex-1">
+        <div className="container mx-auto max-w-3xl px-4 pb-6 pt-8 sm:px-6">
+          <nav aria-label="Breadcrumb" className="mb-8 flex items-center gap-2 text-xs text-muted-foreground">
+            <Link to="/" className="transition-colors hover:text-maroon">Beranda</Link>
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-foreground font-medium">FAQ</span>
-          </div>
+          </nav>
 
-          <h1 className="text-3xl font-bold text-primary mb-8">Pertanyaan yang Sering Diajukan</h1>
+          <SectionHeading as="h1" align="left" char="问" title="Pertanyaan yang Sering Diajukan" className="mb-8" />
 
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="panel w-full divide-y divide-border overflow-hidden px-2 sm:px-4">
             {faqs.map((f, i) => (
-              <AccordionItem key={i} value={`item-${i}`}>
-                <AccordionTrigger className="text-left font-semibold">{f.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed">{f.a}</AccordionContent>
+              <AccordionItem key={i} value={`item-${i}`} className="border-b-0 px-3">
+                <AccordionTrigger className="py-5 text-left font-display text-[1.02rem] font-bold text-ink hover:no-underline [&[data-state=open]]:text-maroon [&>svg]:text-maroon">
+                  {f.q}
+                </AccordionTrigger>
+                <AccordionContent className="pb-5 text-[0.95rem] leading-relaxed text-muted-foreground">{f.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
 
-          <div className="mt-12 bg-cream rounded-2xl p-6 md:p-8">
-            <h2 className="text-xl font-bold text-foreground mb-4">Masih butuh bantuan?</h2>
-            <ul className="space-y-3 text-sm text-foreground">
+          <div className="mizige-dashed mt-10 rounded-[1.75rem] border border-hsk/20 bg-paper p-6 md:p-8">
+            <h2 className="mb-5 text-xl font-bold">Masih butuh bantuan?</h2>
+            <ul className="space-y-3.5 text-sm text-foreground">
               <li className="flex items-center gap-3">
-                <MessageCircle className="w-5 h-5 text-primary flex-shrink-0" />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card"><MessageCircle className="h-4 w-4 text-maroon" /></span>
                 <span>
                   WhatsApp:{' '}
-                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline font-semibold">
+                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-maroon underline underline-offset-2">
                     +62 851-0019-5519
                   </a>
                 </span>
               </li>
               <li className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                <span>Email: <strong>lingchineselab@gmail.com</strong></span>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card"><Mail className="h-4 w-4 text-maroon" /></span>
+                <span>Email: <strong className="text-ink">lingchineselab@gmail.com</strong></span>
               </li>
               <li className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-primary flex-shrink-0" />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card"><Clock className="h-4 w-4 text-maroon" /></span>
                 <span>Jam operasional: Senin–Jumat, 09.00–17.00 WIB</span>
               </li>
             </ul>

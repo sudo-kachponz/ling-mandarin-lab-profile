@@ -6,54 +6,54 @@ import { whatsappUrl } from "@/data/stats";
 
 const LegalPoliciesSection: React.FC = () => {
   return (
-    <section id="terms-and-policies" className="py-16 bg-gradient-to-b from-background via-muted/30 to-background border-t border-border/50">
+    <section id="terms-and-policies" className="section border-t border-border/70 bg-paper">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
         {/* Section Header */}
-        <div className="text-center space-y-3 mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider">
+        <div className="mb-10 space-y-4 text-center">
+          <div className="seal">
             <ShieldCheck className="w-4 h-4" />
             <span>Syarat, Ketentuan & Kebijakan Transaksi</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+          <h2 className="section-title">
             Syarat Layanan & Kebijakan Pembelian E-Book
           </h2>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             Transparansi dan keamanan Anda adalah prioritas kami. Harap pelajari syarat penggunaan dan kebijakan pengembalian sebelum melakukan transaksi.
           </p>
         </div>
 
         {/* Policy Tabs */}
         <Tabs defaultValue="terms" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto p-1.5 bg-muted/60 rounded-xl mb-6 gap-1">
+          <TabsList className="mb-6 grid h-auto w-full grid-cols-1 gap-1 rounded-2xl border border-border bg-card p-1.5 sm:grid-cols-3">
             <TabsTrigger
               value="terms"
-              className="flex items-center justify-center gap-2 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-colors data-[state=active]:bg-maroon data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:[&_svg]:text-gold sm:text-sm"
             >
-              <FileText className="w-4 h-4 text-primary" />
+              <FileText className="w-4 h-4 text-maroon" />
               <span>Syarat & Ketentuan</span>
             </TabsTrigger>
             <TabsTrigger
               value="refund"
-              className="flex items-center justify-center gap-2 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-colors data-[state=active]:bg-maroon data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:[&_svg]:text-gold sm:text-sm"
             >
-              <RefreshCw className="w-4 h-4 text-amber-500" />
+              <RefreshCw className="w-4 h-4 text-maroon" />
               <span>Kebijakan Refund</span>
             </TabsTrigger>
             <TabsTrigger
               value="privacy"
-              className="flex items-center justify-center gap-2 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-colors data-[state=active]:bg-maroon data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:[&_svg]:text-gold sm:text-sm"
             >
-              <Lock className="w-4 h-4 text-emerald-500" />
+              <Lock className="w-4 h-4 text-maroon" />
               <span>Privasi & Keamanan</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Terms & Conditions Content */}
           <TabsContent value="terms">
-            <Card className="border border-border/80 shadow-sm bg-card/80 backdrop-blur-sm">
+            <Card className="panel border-border/80">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg sm:text-xl flex items-center gap-2 text-foreground">
-                  <FileText className="w-5 h-5 text-primary" />
+                  <FileText className="w-5 h-5 text-maroon" />
                   Syarat & Ketentuan Layanan (Terms of Service)
                 </CardTitle>
                 <CardDescription>
@@ -94,10 +94,10 @@ const LegalPoliciesSection: React.FC = () => {
 
           {/* Refund Policy Content */}
           <TabsContent value="refund">
-            <Card className="border border-border/80 shadow-sm bg-card/80 backdrop-blur-sm">
+            <Card className="panel border-border/80">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg sm:text-xl flex items-center gap-2 text-foreground">
-                  <RefreshCw className="w-5 h-5 text-amber-500" />
+                  <RefreshCw className="w-5 h-5 text-maroon" />
                   Kebijakan Pengembalian Dana & Pembatalan (Refund Policy)
                 </CardTitle>
                 <CardDescription>
@@ -105,7 +105,7 @@ const LegalPoliciesSection: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 font-medium text-xs">
+                <div className="rounded-xl border border-gold/50 bg-gold/15 p-3.5 text-xs font-medium text-ink">
                   <strong>Penting:</strong> Karena E-Book merupakan produk digital dengan akses langsung seketika (instant digital delivery), secara umum pembelian yang telah berhasil dikonfirmasi tidak dapat dibatalkan atau dikembalikan.
                 </div>
 
@@ -138,10 +138,10 @@ const LegalPoliciesSection: React.FC = () => {
 
           {/* Privacy & Payment Security Content */}
           <TabsContent value="privacy">
-            <Card className="border border-border/80 shadow-sm bg-card/80 backdrop-blur-sm">
+            <Card className="panel border-border/80">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg sm:text-xl flex items-center gap-2 text-foreground">
-                  <Lock className="w-5 h-5 text-emerald-500" />
+                  <Lock className="w-5 h-5 text-maroon" />
                   Kebijakan Privasi & Keamanan Pembayaran
                 </CardTitle>
                 <CardDescription>
@@ -175,9 +175,9 @@ const LegalPoliciesSection: React.FC = () => {
         </Tabs>
 
         {/* Contact Support Footer Box */}
-        <div className="mt-8 p-4 sm:p-5 rounded-2xl bg-card border border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-[1.5rem] border border-maroon/15 bg-maroon/[0.04] p-5 sm:flex-row">
           <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="p-2.5 rounded-full bg-primary/10 text-primary shrink-0">
+            <div className="shrink-0 rounded-full bg-maroon/10 p-2.5 text-maroon">
               <HelpCircle className="w-6 h-6" />
             </div>
             <div>
@@ -189,7 +189,7 @@ const LegalPoliciesSection: React.FC = () => {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm shrink-0"
+            className="inline-flex shrink-0 items-center justify-center rounded-full bg-maroon px-5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-maroon-deep sm:text-sm"
           >
             Hubungi CS WhatsApp
           </a>

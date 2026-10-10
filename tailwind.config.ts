@@ -14,6 +14,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        display: ['"Zen Maru Gothic"', '"Plus Jakarta Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -53,6 +57,21 @@ export default {
         beige: "hsl(var(--beige))",
         "warm-brown": "hsl(var(--warm-brown))",
         "light-beige": "hsl(var(--light-beige))",
+        maroon: {
+          DEFAULT: "hsl(var(--maroon))",
+          deep: "hsl(var(--maroon-deep))",
+        },
+        gold: "hsl(var(--gold))",
+        paper: "hsl(var(--paper))",
+        ink: "hsl(var(--ink))",
+        hsk: {
+          DEFAULT: "hsl(var(--hsk))",
+          soft: "hsl(var(--hsk-soft))",
+        },
+        tocfl: {
+          DEFAULT: "hsl(var(--tocfl))",
+          soft: "hsl(var(--tocfl-soft))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

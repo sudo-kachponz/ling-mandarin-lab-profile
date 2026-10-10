@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Lock, ChevronLeft, ChevronRight, Copy, Upload, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Lock, ChevronLeft, ChevronRight, Copy, Upload, AlertTriangle, ShieldCheck } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import { pdfjs, Document, Page } from 'react-pdf';
@@ -32,7 +34,7 @@ const VARIANTS: Record<VersionKey, {
     label: 'Simplified',
     sub: '简体字 · China',
     flag: chinaFlag,
-    accent: '#E63946',
+    accent: 'hsl(var(--hsk))',
     compareAt: 75000,
     preview: '/Lingchinenese.pdf',
     note: 'Hanzi lebih sederhana (bentuk disederhanakan), dipakai di China, Singapura, Malaysia. Cocok untuk pemula, ujian HSK, dan bisnis.',
@@ -42,7 +44,7 @@ const VARIANTS: Record<VersionKey, {
     label: 'Traditional',
     sub: '繁體字 · Taiwan',
     flag: taiwanFlag,
-    accent: '#2563eb',
+    accent: 'hsl(var(--tocfl))',
     compareAt: 85000,
     preview: '/Lingchinenese-tw-preview.pdf',
     note: 'Hanzi lebih rumit (goresan lebih banyak, bentuk asli), dipakai di Taiwan, Hong Kong, Makau. Cocok untuk ujian TOCFL dan budaya/literatur klasik.',
@@ -138,6 +140,21 @@ export default function Store() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const checkoutRef = useRef<HTMLDivElement>(null);
   const proofInputRef = useRef<HTMLInputElement>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  // Explainer video: autoplay muted (no black screen), user unmutes via controls.
+  // Only the active video plays; the other is paused so bandwidth stays lean.
+  useEffect(() => {
+    videoRefs.current.forEach((v, i) => {
+      if (!v) return;
+      if (i === videoIdx) {
+        v.muted = true;
+        v.play().catch(() => {}); // autoplay may be blocked until interaction — safe to ignore
+      } else {
+        v.pause();
+      }
+    });
+  }, [videoIdx]);
 
   // Inline QRIS payment popup (no page navigation, no re-entering data).
   const [qrisOrder, setQrisOrder] = useState<QrisOrder | null>(null);
@@ -320,505 +337,523 @@ export default function Store() {
     }
   };
 
+  const methodCard = (key: 'qris' | 'transfer', title: string) => {
+    const active = paymentMethod === key;
+    return (
+      <button
+        type="button"
+        onClick={() => setPaymentMethod(key)}
+        aria-pressed={active}
+        className={`relative flex flex-col rounded-2xl border-2 p-4 text-left transition-colors sm:p-5 ${
+          active ? 'border-maroon bg-maroon/[0.04]' : 'border-border bg-card hover:border-maroon/30'
+        }`}
+      >
+        <span className="flex items-center justify-between gap-3">
+          <span className="font-bold text-ink">{title}</span>
+          <span
+            aria-hidden
+            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${active ? 'border-maroon' : 'border-border'}`}
+          >
+            {active && <span className="h-2.5 w-2.5 rounded-full bg-maroon" />}
+          </span>
+        </span>
+        <span className="mt-3 flex flex-wrap items-baseline gap-2">
+          <span className="text-xs font-semibold text-muted-foreground line-through">{rp(compareAt)}</span>
+          <span className="text-lg font-extrabold text-maroon">{rp(salePrice)}</span>
+          <span className="text-[11px] text-muted-foreground">(+ kode unik 3 digit)</span>
+        </span>
+      </button>
+    );
+  };
+
+  const phoneFrame =
+    'relative flex h-[580px] w-[280px] select-none flex-col justify-between overflow-hidden rounded-[2.5rem] border-[8px] border-ink bg-ink shadow-lift';
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header Store - Background kembali ke warna netral yang elegan */}
-      <div className="bg-[#f4efe9] border-b border-[#6A2B2B]/10 py-12 px-4 md:px-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-[#6A2B2B] tracking-tight">OFFICIAL STORE</h1>
-          <p className="text-[#6A2B2B]/70 mt-2 text-lg font-medium">Ling Chinese Lab</p>
+      <Navbar />
+
+      {/* Header store */}
+      <header className="relative overflow-hidden border-b border-border/70">
+        <div aria-hidden className="paper-dots absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+        <div className="mx-auto flex max-w-6xl items-end justify-between gap-6 px-4 py-10 md:px-8 md:py-12">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-maroon md:text-[2.75rem]">Official Store</h1>
+            <p className="mt-1.5 text-base font-semibold text-muted-foreground md:text-lg">Ling Chinese Lab</p>
+          </div>
+          <span aria-hidden className="mizige hidden h-16 w-16 items-center justify-center rounded-xl border border-hsk/30 sm:flex">
+            <span className="font-hanzi relative text-3xl font-semibold text-maroon">书</span>
+          </span>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-6xl mx-auto py-12 px-4 md:px-8">
-              {/* Highlight Section (Video Phone Frame + Copywriting) */}
-              <div className="mb-16 grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] bg-white rounded-3xl p-6 md:p-10 shadow-soft border border-[#6A2B2B]/10">
-
-                {/* Versi toggle: Simplified (China) ↔ Traditional (Taiwan) */}
-                <div className="lg:col-span-2 flex flex-col items-center text-center gap-4 pb-2">
-                  <h3 className="text-lg md:text-xl font-extrabold text-foreground">Pilih Versi E-Book</h3>
-                  <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
-                    {(['simplified', 'traditional'] as VersionKey[]).map((key) => {
-                      const v = VARIANTS[key];
-                      const active = version === key;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => { setVersion(key); setPreviewPage(1); }}
-                          className={`flex items-center gap-3 rounded-2xl border-2 p-3 md:p-4 transition-all text-left ${active ? 'bg-[#6A2B2B]/5 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
-                          style={active ? { borderColor: v.accent } : undefined}
-                        >
-                          <img src={v.flag} alt={v.label} className="h-9 w-9 md:h-11 md:w-11 rounded-full shadow-sm shrink-0" />
-                          <span className="flex flex-col">
-                            <span className="font-bold text-foreground leading-tight">{v.label}</span>
-                            <span className="text-xs text-muted-foreground">{v.sub}</span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Video Penjelasan in Phone Frame (slideable, like homepage) */}
-                <div className="flex justify-center">
-                  <div className="relative w-[280px] h-[580px] overflow-hidden rounded-[2.5rem] border-[8px] border-black bg-zinc-950 shadow-xl ring-4 ring-[#6A2B2B]/10 flex flex-col justify-between select-none">
-                    {/* Notch */}
-                    <div className="absolute top-0 inset-x-0 h-6 bg-black z-30 rounded-b-xl w-32 mx-auto"></div>
-
-                    {/* Status/Top Bar */}
-                    <div className="absolute top-8 inset-x-0 flex items-center justify-between px-5 py-2 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-20 pointer-events-none">
-                      <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Video Penjelasan</span>
-                      <span className="text-[10px] text-white/60 font-semibold">{videoIdx + 1} / 2</span>
-                    </div>
-
-                    {/* Video content — preload="none": hemat bandwidth, download saat play */}
-                    <div className="w-full h-full bg-black">
-                      {[radikalVideo1, radikalVideo2].map((src, i) => (
-                        <video
-                          key={i}
-                          src={src}
-                          controls
-                          playsInline
-                          preload="none"
-                          className={`h-full w-full object-cover ${videoIdx === i ? 'block' : 'hidden'}`}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Slide arrows (kiri/kanan) */}
-                    {videoIdx > 0 && (
-                      <button
-                        onClick={() => setVideoIdx(v => v - 1)}
-                        className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/70 focus:outline-none"
-                        aria-label="Video sebelumnya"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                    )}
-                    {videoIdx < 1 && (
-                      <button
-                        onClick={() => setVideoIdx(v => v + 1)}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/70 focus:outline-none"
-                        aria-label="Video berikutnya"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    )}
-
-                    {/* Dots indicator */}
-                    <div className="absolute bottom-16 inset-x-0 flex justify-center z-20 pointer-events-auto">
-                      <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/5">
-                        {[0, 1].map((i) => (
-                          <button
-                            key={i}
-                            onClick={() => setVideoIdx(i)}
-                            className="focus:outline-none transition-all duration-200"
-                            aria-label={`Video ${i + 1}`}
-                          >
-                            <div className={`w-1.5 h-1.5 rounded-full ${videoIdx === i ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'}`} />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Marketing Copy */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-[#6A2B2B]/10 text-[#6A2B2B] text-sm font-bold tracking-wide">
-                      E-BOOK TERBARU
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold text-white" style={{ backgroundColor: variant.accent }}>
-                      <img src={variant.flag} alt="" className="h-4 w-4 rounded-full" /> {variant.label}
-                    </span>
-                  </div>
-                  <h2 className="text-3xl md:text-5xl font-black text-foreground leading-tight">
-                    Rahasia Huruf Mandarin <span className="text-[#6A2B2B]">(Vol. 1)</span>
-                  </h2>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="line-through text-muted-foreground text-lg md:text-xl font-bold">{rp(compareAt)}</span>
-                    <span className="text-[#6A2B2B] text-2xl md:text-3xl font-black">{rp(salePrice)}</span>
-                    <span className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">DISCOUNT {discountPct}%</span>
-                  </div>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    Buku panduan komprehensif menguasai dasar-dasar huruf Mandarin (Hanzi). Dirancang khusus dengan metode yang terstruktur agar proses belajar menjadi lebih mudah, cepat, dan menyenangkan.
-                  </p>
-
-                  {/* Penjelasan versi — ditaruh di sini (area marketing) biar gampang dinotice */}
-                  <div className="flex items-start gap-3 rounded-2xl p-4 border-l-4 bg-[#6A2B2B]/5" style={{ borderColor: variant.accent }}>
-                    <img src={variant.flag} alt={variant.label} className="h-8 w-8 rounded-full shadow-sm shrink-0 mt-0.5" />
-                    <p className="text-sm md:text-[15px] text-foreground/80 leading-relaxed">
-                      <strong style={{ color: variant.accent }}>{variant.label} ({variant.sub}):</strong> {variant.note}
-                    </p>
-                  </div>
-
-                  <div className="space-y-4 pt-2">
-                    <div className="flex items-center gap-4 bg-[#6A2B2B]/5 p-3 rounded-xl border border-[#6A2B2B]/10">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#6A2B2B]/10 shadow-sm">
-                        <CheckCircle2 className="h-6 w-6 text-[#6A2B2B]" />
-                      </div>
-                      <p className="text-[1.05rem] font-semibold text-foreground/90">10 Unsur Radikal & Step Menulis (Guratan)</p>
-                    </div>
-                    <div className="flex items-center gap-4 bg-[#6A2B2B]/5 p-3 rounded-xl border border-[#6A2B2B]/10">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#6A2B2B]/10 shadow-sm">
-                        <CheckCircle2 className="h-6 w-6 text-[#6A2B2B]" />
-                      </div>
-                      <p className="text-[1.05rem] font-semibold text-foreground/90">Cocok untuk Pemula hingga Menengah</p>
-                    </div>
-                    <div className="flex items-center gap-4 bg-[#6A2B2B]/5 p-3 rounded-xl border border-[#6A2B2B]/10">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#6A2B2B]/10 shadow-sm">
-                        <CheckCircle2 className="h-6 w-6 text-[#6A2B2B]" />
-                      </div>
-                      <p className="text-[1.05rem] font-semibold text-foreground/90">Dilengkapi Latihan Soal + Kunci Jawaban Lengkap</p>
-                    </div>
-                  </div>
-                </div>
+      <div className="mx-auto max-w-6xl px-4 py-10 md:px-8 md:py-14">
+        {/* Produk */}
+        <section className="panel mb-12 grid items-center gap-10 p-6 md:p-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14">
+          {/* Video penjelasan */}
+          <div className="order-2 flex justify-center lg:order-1">
+            <div className={phoneFrame}>
+              <div className="absolute inset-x-0 top-0 z-30 mx-auto h-6 w-32 rounded-b-xl bg-ink" />
+              <div className="pointer-events-none absolute inset-x-0 top-8 z-20 flex items-center justify-between bg-gradient-to-b from-black/70 via-black/30 to-transparent px-5 py-2">
+                <span className="text-[11px] font-semibold text-white/85">Video Penjelasan</span>
+                <span className="text-[11px] font-semibold text-white/60">{videoIdx + 1} / 2</span>
               </div>
 
-              {/* Checkout Section — hidden pre-launch except for preview emails */}
-              <div ref={checkoutRef} className="max-w-5xl mx-auto bg-white rounded-3xl p-6 md:p-10 shadow-soft border border-[#6A2B2B]/10 scroll-mt-6">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl md:text-3xl font-extrabold text-foreground">Pembelian E-Book</h3>
-                  <p className="text-muted-foreground mt-2">Isi detail Anda di bawah ini untuk mendapatkan akses e-book</p>
+              {/* Video aktif autoplay (muted); yang non-aktif preload="none" biar hemat bandwidth */}
+              <div className="h-full w-full bg-black">
+                {[radikalVideo1, radikalVideo2].map((src, i) => (
+                  <video
+                    key={i}
+                    ref={(el) => { videoRefs.current[i] = el; }}
+                    src={src}
+                    controls
+                    playsInline
+                    autoPlay={i === videoIdx}
+                    muted
+                    loop
+                    preload={i === videoIdx ? 'auto' : 'none'}
+                    className={`h-full w-full object-cover ${videoIdx === i ? 'block' : 'hidden'}`}
+                  />
+                ))}
+              </div>
+
+              {videoIdx > 0 && (
+                <button
+                  onClick={() => setVideoIdx((v) => v - 1)}
+                  className="absolute left-1.5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md hover:bg-black/65"
+                  aria-label="Video sebelumnya"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
+              {videoIdx < 1 && (
+                <button
+                  onClick={() => setVideoIdx((v) => v + 1)}
+                  className="absolute right-1.5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md hover:bg-black/65"
+                  aria-label="Video berikutnya"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
+
+              <div className="absolute inset-x-0 bottom-16 z-20 flex justify-center">
+                <div className="flex items-center gap-1.5 rounded-full border border-white/5 bg-black/40 px-3 py-1 backdrop-blur-md">
+                  {[0, 1].map((i) => (
+                    <button key={i} onClick={() => setVideoIdx(i)} className="p-0.5" aria-label={`Video ${i + 1}`}>
+                      <span className={`block h-1.5 rounded-full transition-all ${videoIdx === i ? 'w-4 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`} />
+                    </button>
+                  ))}
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] items-start">
-                <form onSubmit={handleCheckout} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label htmlFor="buyer-name" className="text-sm font-semibold text-foreground">Nama Lengkap <span className="text-red-500">*</span></label>
-                      <input
-                        id="buyer-name"
-                        type="text"
-                        placeholder="Masukkan nama lengkap Anda"
-                        value={buyerName}
-                        onChange={(e) => setBuyerName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6A2B2B]/20 focus:border-[#6A2B2B] transition-all bg-sand/10 text-foreground"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="buyer-whatsapp" className="text-sm font-semibold text-foreground">Nomor WhatsApp <span className="text-red-500">*</span></label>
-                      <PhoneField
-                        id="buyer-whatsapp"
-                        placeholder="Contoh: 0812 3456 789"
-                        value={buyerWhatsapp}
-                        onChange={setBuyerWhatsapp}
-                        className="wa-phone-input w-full px-4 py-3 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-[#6A2B2B]/20 focus-within:border-[#6A2B2B] transition-all bg-sand/10 text-foreground"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="buyer-email" className="text-sm font-semibold text-foreground">Alamat Email <span className="text-red-500">*</span></label>
-                    <input
-                      id="buyer-email"
-                      type="email"
-                      placeholder="email@contoh.com"
-                      value={buyerEmail}
-                      onChange={(e) => setBuyerEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6A2B2B]/20 focus:border-[#6A2B2B] transition-all bg-sand/10 text-foreground"
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">E-book akan dikaitkan dengan email ini untuk akses membaca.</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="text-sm font-semibold text-foreground">Pilih Metode Pembayaran</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* QRIS Option */}
-                      <div
-                        onClick={() => setPaymentMethod('qris')}
-                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between relative overflow-hidden ${paymentMethod === 'qris'
-                            ? 'border-[#6A2B2B] bg-[#6A2B2B]/5 shadow-sm'
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                      >
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="font-bold text-foreground">Scan QRIS</span>
-                        </div>
-                        <div className="mt-auto flex items-baseline gap-2 flex-wrap">
-                          <span className="text-xs line-through text-muted-foreground font-semibold">{rp(compareAt)}</span>
-                          <span className="text-lg font-black text-[#6A2B2B]">{rp(salePrice)}</span>
-                          <span className="text-[10px] text-muted-foreground">(+ kode unik 3 digit)</span>
-                        </div>
-                      </div>
-
-                      {/* Transfer Option */}
-                      <div
-                        onClick={() => setPaymentMethod('transfer')}
-                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between relative overflow-hidden ${paymentMethod === 'transfer'
-                            ? 'border-[#6A2B2B] bg-[#6A2B2B]/5 shadow-sm'
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                      >
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="font-bold text-foreground">Transfer Bank (Manual)</span>
-                        </div>
-                        <div className="mt-auto flex items-baseline gap-2 flex-wrap">
-                          <span className="text-xs line-through text-muted-foreground font-semibold">{rp(compareAt)}</span>
-                          <span className="text-lg font-black text-[#6A2B2B]">{rp(salePrice)}</span>
-                          <span className="text-[10px] text-muted-foreground">(+ kode unik 3 digit)</span>
-                        </div>
-                      </div>
-                    </div>
-                    {paymentMethod === 'qris' && (
-                      <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-                        Bayar via QRIS lalu unggah bukti. Link akses e-book dikirim ke WhatsApp Anda setelah diverifikasi (maks 1×24 jam).
-                      </p>
-                    )}
-                    {paymentMethod === 'transfer' && (
-                      <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-                        Transfer ke rekening BCA kami lalu unggah bukti. Nomor rekening &amp; nominal pas (termasuk kode unik) muncul di langkah berikutnya. Link akses e-book dikirim ke WhatsApp Anda setelah diverifikasi (maks 1×24 jam).
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-sand/10 border border-gray-100 space-y-2 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Harga E-Book</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs line-through text-muted-foreground font-semibold">{rp(compareAt)}</span>
-                        <span className="font-semibold text-foreground">{rp(salePrice)}</span>
-                      </div>
-                    </div>
-                    <div className="border-t border-dashed my-2 pt-2 flex justify-between font-bold text-base text-[#6A2B2B]">
-                      <span>Total Bayar</span>
-                      <span>{rp(salePrice)}</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-[#6A2B2B] hover:bg-[#522121] text-white font-extrabold py-6 text-base rounded-xl shadow-md hover:shadow-lg transition-all duration-300 h-14"
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-t-transparent border-white" />
-                        <span>Memproses...</span>
-                      </div>
-                    ) : paymentMethod === 'qris' ? (
-                      'Lanjut ke Pembayaran QRIS'
-                    ) : (
-                      'Lanjut ke Pembayaran Transfer'
-                    )}
-                  </Button>
-                </form>
-
-                {/* HP: pratinjau e-book PDF (dipindah dari kotak atas) */}
-                <div className="flex justify-center">
-                  <div className="relative w-[280px] h-[580px] overflow-hidden rounded-[2.5rem] border-[8px] border-black bg-zinc-950 shadow-xl ring-4 ring-[#6A2B2B]/10 flex flex-col justify-between select-none">
-                    {/* Notch */}
-                    <div className="absolute top-0 inset-x-0 h-6 bg-black z-30 rounded-b-xl w-32 mx-auto"></div>
-
-                    {/* Status/Top Bar */}
-                    <div className="absolute top-8 inset-x-0 flex items-center justify-between px-5 py-2 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-20">
-                      <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Pratinjau E-Book</span>
-                      <span className="text-[10px] text-white/60 font-semibold">
-                        {previewPage <= 3 ? `Hal ${previewPage} dari 3` : 'Selesai'}
+          {/* Info produk */}
+          <div className="order-1 space-y-6 lg:order-2">
+            {/* Pilih versi */}
+            <div>
+              <h3 className="mb-3 text-sm font-bold text-muted-foreground">Pilih Versi E-Book</h3>
+              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Pilih Versi E-Book">
+                {(['simplified', 'traditional'] as VersionKey[]).map((key) => {
+                  const v = VARIANTS[key];
+                  const active = version === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => { setVersion(key); setPreviewPage(1); }}
+                      className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors md:p-3.5 ${
+                        active ? 'bg-paper' : 'border-border bg-card hover:border-maroon/25'
+                      }`}
+                      style={active ? { borderColor: v.accent } : undefined}
+                    >
+                      <img src={v.flag} alt={v.label} className="h-9 w-9 shrink-0 rounded-full md:h-10 md:w-10" />
+                      <span className="flex min-w-0 flex-col">
+                        <span className="font-bold leading-tight text-ink">{v.label}</span>
+                        <span className="font-hanzi truncate text-xs text-muted-foreground">{v.sub}</span>
                       </span>
-                    </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                    {/* Slider Content */}
-                    <div className="w-full h-full flex flex-col justify-between pt-14 pb-20 relative">
-                      {previewPage <= 3 ? (
-                        <div className="w-full flex-1 flex items-center justify-center bg-white overflow-hidden p-1">
-                          <Document
-                            file={previewFile}
-                            loading={
-                              <div className="flex flex-col items-center justify-center text-zinc-400 p-4">
-                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent border-[#6A2B2B] mb-2" />
-                                <p className="text-[11px] font-medium text-[#6A2B2B]/75">Memuat halaman...</p>
-                              </div>
-                            }
-                            error={
-                              <div className="flex flex-col items-center justify-center text-red-500 p-4 text-center">
-                                <p className="text-xs font-semibold">Gagal memuat pratinjau</p>
-                              </div>
-                            }
-                          >
-                            <Page
-                              pageNumber={previewPage}
-                              width={250}
-                              renderTextLayer={false}
-                              renderAnnotationLayer={false}
-                              className="pointer-events-none shadow-sm"
-                            />
-                          </Document>
-                        </div>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center px-5 text-center bg-gradient-to-b from-[#4A1A1A] to-[#1E0A0A] text-white relative">
-                          <div className="absolute -top-12 -left-12 w-32 h-32 rounded-full bg-[#6A2B2B]/20 blur-2xl"></div>
-                          <div className="absolute -bottom-12 -right-12 w-32 h-32 rounded-full bg-[#6A2B2B]/20 blur-2xl"></div>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="seal">E-Book Terbaru</span>
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold text-white"
+                  style={{ backgroundColor: variant.accent }}
+                >
+                  <img src={variant.flag} alt="" className="h-3.5 w-3.5 rounded-full" /> {variant.label}
+                </span>
+              </div>
+              <h2 className="font-display text-3xl font-bold leading-tight text-ink md:text-[2.6rem]">
+                Rahasia Huruf Mandarin <span className="text-maroon">(Vol. 1)</span>
+              </h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-lg font-semibold text-muted-foreground line-through">{rp(compareAt)}</span>
+                <span className="text-3xl font-extrabold text-maroon">{rp(salePrice)}</span>
+                <span className="rounded-md bg-gold px-2 py-1 text-xs font-extrabold text-maroon-deep">DISCOUNT {discountPct}%</span>
+              </div>
+            </div>
 
-                          <div className="w-14 h-14 rounded-full bg-[#E5B869]/20 flex items-center justify-center mb-5 border border-[#E5B869]/30 animate-pulse z-10">
-                            <Lock className="w-6 h-6 text-[#E5B869]" />
+            <p className="leading-relaxed text-muted-foreground md:text-[1.05rem]">
+              Buku panduan komprehensif menguasai dasar-dasar huruf Mandarin (Hanzi). Dirancang khusus dengan metode yang terstruktur agar proses belajar menjadi lebih mudah, cepat, dan menyenangkan.
+            </p>
+
+            <div className="flex items-start gap-3 rounded-2xl border-l-4 bg-paper p-4" style={{ borderColor: variant.accent }}>
+              <img src={variant.flag} alt={variant.label} className="mt-0.5 h-7 w-7 shrink-0 rounded-full" />
+              <p className="text-sm leading-relaxed text-foreground/85 md:text-[15px]">
+                <strong style={{ color: variant.accent }}>{variant.label} ({variant.sub}):</strong> {variant.note}
+              </p>
+            </div>
+
+            <ul className="divide-y divide-border rounded-2xl border border-border">
+              {[
+                '10 Unsur Radikal & Step Menulis (Guratan)',
+                'Cocok untuk Pemula hingga Menengah',
+                'Dilengkapi Latihan Soal + Kunci Jawaban Lengkap',
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-3 px-4 py-3">
+                  <CheckCircle2 className="h-5 w-5 shrink-0 text-maroon" />
+                  <span className="font-semibold text-foreground/90">{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Button
+              type="button"
+              onClick={handlePurchaseFromPreview}
+              className="h-14 w-full rounded-full bg-maroon text-base font-extrabold text-white shadow-soft hover:bg-maroon-deep sm:w-auto sm:px-10"
+            >
+              Beli E-Book Sekarang
+            </Button>
+          </div>
+        </section>
+
+        {/* Checkout */}
+        <section ref={checkoutRef} className="panel scroll-mt-24 p-6 md:p-10" aria-labelledby="checkout-title">
+          <div className="mb-8 border-b border-border pb-6">
+            <h3 id="checkout-title" className="font-display text-2xl font-bold md:text-3xl">Pembelian E-Book</h3>
+            <p className="mt-2 text-muted-foreground">Isi detail Anda di bawah ini untuk mendapatkan akses e-book</p>
+          </div>
+
+          <div className="grid items-start gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+            <form onSubmit={handleCheckout} className="space-y-7">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label htmlFor="buyer-name" className="text-sm font-semibold text-ink">
+                    Nama Lengkap <span className="text-hsk">*</span>
+                  </label>
+                  <input
+                    id="buyer-name"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Masukkan nama lengkap Anda"
+                    value={buyerName}
+                    onChange={(e) => setBuyerName(e.target.value)}
+                    className="field"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="buyer-whatsapp" className="text-sm font-semibold text-ink">
+                    Nomor WhatsApp <span className="text-hsk">*</span>
+                  </label>
+                  <PhoneField
+                    id="buyer-whatsapp"
+                    placeholder="Contoh: 0812 3456 789"
+                    value={buyerWhatsapp}
+                    onChange={setBuyerWhatsapp}
+                    className="wa-phone-input w-full rounded-xl border border-input bg-paper px-4 py-3 text-foreground transition-colors focus-within:border-maroon focus-within:ring-2 focus-within:ring-maroon/15"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="buyer-email" className="text-sm font-semibold text-ink">
+                  Alamat Email <span className="text-hsk">*</span>
+                </label>
+                <input
+                  id="buyer-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="email@contoh.com"
+                  value={buyerEmail}
+                  onChange={(e) => setBuyerEmail(e.target.value)}
+                  className="field"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">E-book akan dikaitkan dengan email ini untuk akses membaca.</p>
+              </div>
+
+              <fieldset className="space-y-3">
+                <legend className="mb-3 text-sm font-semibold text-ink">Pilih Metode Pembayaran</legend>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {methodCard('qris', 'Scan QRIS')}
+                  {methodCard('transfer', 'Transfer Bank (Manual)')}
+                </div>
+                {paymentMethod === 'qris' && (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Bayar via QRIS lalu unggah bukti. Link akses e-book dikirim ke WhatsApp Anda setelah diverifikasi (maks 1×24 jam).
+                  </p>
+                )}
+                {paymentMethod === 'transfer' && (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Transfer ke rekening BCA kami lalu unggah bukti. Nomor rekening &amp; nominal pas (termasuk kode unik) muncul di langkah berikutnya. Link akses e-book dikirim ke WhatsApp Anda setelah diverifikasi (maks 1×24 jam).
+                  </p>
+                )}
+              </fieldset>
+
+              <div className="space-y-2 rounded-2xl bg-paper p-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Harga E-Book</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground line-through">{rp(compareAt)}</span>
+                    <span className="font-semibold text-ink">{rp(salePrice)}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t border-dashed border-border pt-2.5 text-base font-bold text-maroon">
+                  <span>Total Bayar</span>
+                  <span>{rp(salePrice)}</span>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-14 w-full rounded-full bg-maroon text-base font-extrabold text-white shadow-soft transition-colors hover:bg-maroon-deep"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Memproses...
+                  </span>
+                ) : paymentMethod === 'qris' ? (
+                  'Lanjut ke Pembayaran QRIS'
+                ) : (
+                  'Lanjut ke Pembayaran Transfer'
+                )}
+              </Button>
+              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5 text-maroon" />
+                <a href="/#terms-and-policies" className="underline-offset-2 hover:text-maroon hover:underline">Keamanan Pembayaran & Privasi</a>
+              </p>
+            </form>
+
+            {/* Pratinjau e-book */}
+            <div className="flex justify-center lg:sticky lg:top-28">
+              <div className={phoneFrame}>
+                <div className="absolute inset-x-0 top-0 z-30 mx-auto h-6 w-32 rounded-b-xl bg-ink" />
+                <div className="absolute inset-x-0 top-8 z-20 flex items-center justify-between bg-gradient-to-b from-black/70 via-black/30 to-transparent px-5 py-2">
+                  <span className="text-[11px] font-semibold text-white/85">Pratinjau E-Book</span>
+                  <span className="text-[11px] font-semibold text-white/60">
+                    {previewPage <= 3 ? `Hal ${previewPage} dari 3` : 'Selesai'}
+                  </span>
+                </div>
+
+                <div className="relative flex h-full w-full flex-col justify-between pb-20 pt-14">
+                  {previewPage <= 3 ? (
+                    <div className="flex w-full flex-1 items-center justify-center overflow-hidden bg-white p-1">
+                      <Document
+                        file={previewFile}
+                        loading={
+                          <div className="flex flex-col items-center justify-center p-4">
+                            <div className="mb-2 h-8 w-8 animate-spin rounded-full border-2 border-maroon border-t-transparent" />
+                            <p className="text-[11px] font-medium text-maroon/75">Memuat halaman...</p>
                           </div>
-                          <h4 className="text-lg font-bold tracking-tight mb-2 text-[#E5B869] z-10">Ingin Lanjut Membaca?</h4>
-                          <p className="text-[11px] text-zinc-300 leading-relaxed mb-6 z-10">
-                            Miliki versi lengkap e-book <strong className="text-white">Rahasia Huruf Mandarin (Vol. 1)</strong> untuk membuka 10 radikal utama, langkah penulisan guratan, serta kuis latihan lengkap.
-                          </p>
-                          <Button
-                            onClick={handlePurchaseFromPreview}
-                            className="w-full bg-[#E5B869] hover:bg-[#D4A758] text-[#331111] font-extrabold py-5 text-xs rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] z-10"
-                          >
-                            Beli E-Book Sekarang
-                          </Button>
-                        </div>
-                      )}
+                        }
+                        error={
+                          <div className="flex flex-col items-center justify-center p-4 text-center text-hsk">
+                            <p className="text-xs font-semibold">Gagal memuat pratinjau</p>
+                          </div>
+                        }
+                      >
+                        <Page
+                          pageNumber={previewPage}
+                          width={250}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                          className="pointer-events-none shadow-sm"
+                        />
+                      </Document>
                     </div>
-
-                    {/* Slider Bottom Controls */}
-                    <div className="absolute bottom-4 inset-x-0 flex flex-col items-center gap-2 px-4 z-20">
-                      {/* Dots indicator */}
-                      <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/5">
-                        {[1, 2, 3, 4].map((p) => (
-                          <button
-                            key={p}
-                            onClick={() => setPreviewPage(p)}
-                            className="focus:outline-none transition-all duration-200"
-                          >
-                            {p === 4 ? (
-                              <Lock className={`w-2.5 h-2.5 ${previewPage === 4 ? 'text-[#E5B869] scale-125' : 'text-zinc-500 hover:text-zinc-400'}`} />
-                            ) : (
-                              <div className={`w-1.5 h-1.5 rounded-full ${previewPage === p ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'}`} />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Nav buttons */}
-                      <div className="flex items-center justify-between w-full px-2">
-                        {previewPage > 1 ? (
-                          <button
-                            onClick={() => setPreviewPage(prev => prev - 1)}
-                            className="flex items-center gap-1 text-white/80 hover:text-white text-[11px] font-semibold py-1 focus:outline-none"
-                          >
-                            <ChevronLeft className="w-3.5 h-3.5" /> Kembali
-                          </button>
-                        ) : (
-                          <div />
-                        )}
-
-                        {previewPage < 4 ? (
-                          <button
-                            onClick={() => setPreviewPage(prev => prev + 1)}
-                            className="flex items-center gap-1 text-white/80 hover:text-white text-[11px] font-semibold py-1 focus:outline-none ml-auto"
-                          >
-                            Lanjut <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        ) : (
-                          <div />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                </div>
-              </div>
-        </div>
-
-        {/* Inline QRIS payment popup — data already entered, no page hop */}
-        <Dialog open={!!qrisOrder} onOpenChange={(o) => { if (!o) { setQrisOrder(null); setPaidDone(false); } }}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            {paidDone ? (
-              <div className="text-center py-4">
-                <CheckCircle2 className="w-14 h-14 text-green-600 mx-auto mb-3" />
-                <DialogHeader><DialogTitle className="text-center">Bukti Terkirim!</DialogTitle></DialogHeader>
-                <p className="text-sm text-muted-foreground mt-3">
-                  Kode pesanan: <span className="font-mono font-bold">{qrisOrder?.orderRef}</span>
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Kami verifikasi maks. 1×24 jam. <strong>Link akses e-book dikirim ke WhatsApp Anda</strong> setelah pembayaran diverifikasi.
-                </p>
-                <Button className="mt-5 w-full bg-[#6A2B2B] hover:bg-[#522121] text-white" onClick={() => setQrisOrder(null)}>Tutup</Button>
-              </div>
-            ) : qrisOrder && (
-              <>
-                <DialogHeader><DialogTitle>{qrisOrder.method === 'qris' ? 'Scan & Bayar QRIS' : 'Transfer Bank BCA'}</DialogTitle></DialogHeader>
-                <div className="text-center">
-                  {qrisOrder.method === 'qris' ? (
-                    <>
-                      {qrDataUrl && <img src={qrDataUrl} alt="QRIS Ling Chinese Lab" className="w-56 h-56 mx-auto rounded-lg" />}
-                      <p className="text-xs text-muted-foreground">QRIS · Ling Chinese Lab</p>
-                    </>
                   ) : (
-                    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-left">
-                      <p className="text-xs text-muted-foreground font-semibold">BANK BCA</p>
-                      <p className="text-lg font-black text-[#6A2B2B] tracking-wide mt-0.5">2160835373</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">a.n. Celine</p>
-                      <Button variant="outline" size="sm" className="mt-2" onClick={() => copyText('2160835373', 'Nomor rekening')}>
-                        <Copy className="w-4 h-4 mr-1" /> Salin rekening
+                    <div className="mizige-dashed relative flex h-full w-full flex-col items-center justify-center bg-maroon-deep px-5 text-center text-white">
+                      <div className="z-10 mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-gold/15">
+                        <Lock className="h-6 w-6 text-gold" />
+                      </div>
+                      <h4 className="z-10 mb-2 font-display text-lg font-bold text-gold">Ingin Lanjut Membaca?</h4>
+                      <p className="z-10 mb-6 text-[11px] leading-relaxed text-white/75">
+                        Miliki versi lengkap e-book <strong className="text-white">Rahasia Huruf Mandarin (Vol. 1)</strong> untuk membuka 10 radikal utama, langkah penulisan guratan, serta kuis latihan lengkap.
+                      </p>
+                      <Button
+                        onClick={handlePurchaseFromPreview}
+                        className="z-10 w-full rounded-full bg-gold py-5 text-xs font-extrabold text-maroon-deep hover:bg-[#D4A758]"
+                      >
+                        Beli E-Book Sekarang
                       </Button>
                     </div>
                   )}
-                  <div className="bg-[#f4efe9]/70 rounded-xl p-3 mt-3">
-                    <p className="text-xs text-muted-foreground">Nominal</p>
-                    <p className="text-2xl font-extrabold text-[#6A2B2B]">{formatPrice(qrisOrder.finalAmount)}</p>
-                    <Button variant="outline" size="sm" className="mt-2" onClick={() => copyText(String(qrisOrder.finalAmount), 'Nominal')}>
-                      <Copy className="w-4 h-4 mr-1" /> Salin nominal
-                    </Button>
-                  </div>
-                  {qrisOrder.method === 'qris' && qrisDynamic ? (
-                    <p className="text-xs text-muted-foreground mt-2">Nominal terisi otomatis saat Anda scan.</p>
-                  ) : (
-                    <div className="mt-3 flex items-start gap-2 text-left text-xs text-red-700 bg-red-50 border border-red-200 p-2 rounded-lg">
-                      <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <span>{qrisOrder.method === 'qris' ? 'Masukkan' : 'Transfer'} nominal <strong>persis sampai 3 angka terakhir</strong> — itu kode pesanan Anda.</span>
-                    </div>
-                  )}
-                  <div className="text-xs text-muted-foreground mt-3 text-left bg-sand/10 rounded-lg p-3 space-y-1">
-                    <div className="flex justify-between"><span>Harga e-book</span><span>{formatPrice(qrisOrder.baseAmount - qrisOrder.serviceFee)}</span></div>
-                    {qrisOrder.serviceFee > 0 && (
-                      <div className="flex justify-between"><span>Biaya layanan</span><span>{formatPrice(qrisOrder.serviceFee)}</span></div>
-                    )}
-                    <div className="flex justify-between"><span>Kode unik</span><span>{formatPrice(qrisOrder.uniqueCode)}</span></div>
-                    <div className="flex justify-between font-bold text-[#6A2B2B] border-t pt-1"><span>Total</span><span>{formatPrice(qrisOrder.finalAmount)}</span></div>
-                  </div>
                 </div>
 
-                <div className="border-t pt-4 mt-1">
-                  <p className="text-sm font-semibold mb-2">Sudah bayar? Unggah bukti <span className="text-red-500">*</span></p>
-                  {/* Explicit ref.click() instead of a <label> wrapping the input:
-                      inside a Radix Dialog the label click gets swallowed by the
-                      focus-scope/scroll-lock on desktop, so no file was picked and
-                      the send button stayed disabled ("gabisa diklik di tab"). */}
-                  <button
-                    type="button"
-                    onClick={() => proofInputRef.current?.click()}
-                    disabled={uploading}
-                    className="w-full flex flex-col items-center justify-center border-2 border-dashed border-[#6A2B2B]/30 rounded-xl p-4 cursor-pointer hover:bg-sand/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {proofPreview ? (
-                      <img src={proofPreview} className="max-h-32 rounded" alt="Preview bukti" />
-                    ) : proofFile ? (
-                      <span className="text-sm text-foreground font-medium">{proofFile.name}</span>
+                <div className="absolute inset-x-0 bottom-4 z-20 flex flex-col items-center gap-2 px-4">
+                  <div className="flex items-center gap-1.5 rounded-full border border-white/5 bg-black/40 px-3 py-1 backdrop-blur-md">
+                    {[1, 2, 3, 4].map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPreviewPage(p)}
+                        className="p-0.5"
+                        aria-label={p === 4 ? 'Halaman terkunci' : `Halaman ${p}`}
+                      >
+                        {p === 4 ? (
+                          <Lock className={`h-2.5 w-2.5 ${previewPage === 4 ? 'text-gold' : 'text-zinc-400 hover:text-zinc-300'}`} />
+                        ) : (
+                          <span className={`block h-1.5 rounded-full transition-all ${previewPage === p ? 'w-4 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex w-full items-center justify-between px-2">
+                    {previewPage > 1 ? (
+                      <button
+                        onClick={() => setPreviewPage((prev) => prev - 1)}
+                        className="flex items-center gap-1 py-1 text-[11px] font-semibold text-white/80 hover:text-white"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" /> Kembali
+                      </button>
                     ) : (
-                      <>
-                        <Upload className="w-6 h-6 text-[#6A2B2B]/50 mb-1" />
-                        <span className="text-xs text-muted-foreground text-center">Klik untuk unggah (JPG/PNG/WEBP/PDF · maks 25 MB)</span>
-                      </>
+                      <div />
                     )}
-                  </button>
-                  <input ref={proofInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={onPickProof} disabled={uploading} />
-                  {uploading && (
-                    <div className="mt-2">
-                      <Progress value={uploadProgress} />
-                      <p className="text-xs text-center text-muted-foreground mt-1">Mengunggah… {uploadProgress}%</p>
-                    </div>
-                  )}
-                  <Button onClick={uploadProof} disabled={uploading || !proofFile} className="w-full mt-3 bg-[#6A2B2B] hover:bg-[#522121] text-white h-12 font-bold rounded-xl">
-                    {uploading ? 'Mengunggah…' : 'Kirim Bukti Pembayaran'}
+                    {previewPage < 4 ? (
+                      <button
+                        onClick={() => setPreviewPage((prev) => prev + 1)}
+                        className="ml-auto flex items-center gap-1 py-1 text-[11px] font-semibold text-white/80 hover:text-white"
+                      >
+                        Lanjut <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    ) : (
+                      <div />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Popup pembayaran — data sudah terisi, tanpa pindah halaman */}
+      <Dialog open={!!qrisOrder} onOpenChange={(o) => { if (!o) { setQrisOrder(null); setPaidDone(false); } }}>
+        <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto rounded-[1.5rem] border-border bg-card">
+          {paidDone ? (
+            <div className="py-4 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-maroon/[0.07]">
+                <CheckCircle2 className="h-9 w-9 text-maroon" />
+              </div>
+              <DialogHeader><DialogTitle className="text-center font-display text-xl">Bukti Terkirim!</DialogTitle></DialogHeader>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Kode pesanan: <span className="font-mono font-bold text-ink">{qrisOrder?.orderRef}</span>
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Kami verifikasi maks. 1×24 jam. <strong className="text-ink">Link akses e-book dikirim ke WhatsApp Anda</strong> setelah pembayaran diverifikasi.
+              </p>
+              <Button className="mt-6 h-12 w-full rounded-full bg-maroon font-bold text-white hover:bg-maroon-deep" onClick={() => setQrisOrder(null)}>Tutup</Button>
+            </div>
+          ) : qrisOrder && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl">{qrisOrder.method === 'qris' ? 'Scan & Bayar QRIS' : 'Transfer Bank BCA'}</DialogTitle>
+              </DialogHeader>
+              <div className="text-center">
+                {qrisOrder.method === 'qris' ? (
+                  <>
+                    {qrDataUrl && (
+                      <div className="mx-auto w-fit rounded-2xl border border-border bg-white p-3">
+                        <img src={qrDataUrl} alt="QRIS Ling Chinese Lab" className="mx-auto h-56 w-56" />
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-muted-foreground">QRIS · Ling Chinese Lab</p>
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-border bg-paper p-4 text-left">
+                    <p className="text-xs font-semibold text-muted-foreground">BANK BCA</p>
+                    <p className="mt-0.5 text-xl font-extrabold tracking-wide text-maroon">2160835373</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">a.n. Celine</p>
+                    <Button variant="outline" size="sm" className="mt-3 rounded-full border-maroon/30 text-maroon hover:bg-maroon/5 hover:text-maroon" onClick={() => copyText('2160835373', 'Nomor rekening')}>
+                      <Copy className="mr-1 h-4 w-4" /> Salin rekening
+                    </Button>
+                  </div>
+                )}
+                <div className="mt-3 rounded-2xl bg-paper p-4">
+                  <p className="text-xs text-muted-foreground">Nominal</p>
+                  <p className="text-2xl font-extrabold text-maroon">{formatPrice(qrisOrder.finalAmount)}</p>
+                  <Button variant="outline" size="sm" className="mt-2 rounded-full border-maroon/30 text-maroon hover:bg-maroon/5 hover:text-maroon" onClick={() => copyText(String(qrisOrder.finalAmount), 'Nominal')}>
+                    <Copy className="mr-1 h-4 w-4" /> Salin nominal
                   </Button>
                 </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
+                {qrisOrder.method === 'qris' && qrisDynamic ? (
+                  <p className="mt-2 text-xs text-muted-foreground">Nominal terisi otomatis saat Anda scan.</p>
+                ) : (
+                  <div className="mt-3 flex items-start gap-2 rounded-xl border border-hsk/30 bg-hsk-soft p-2.5 text-left text-xs text-hsk">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{qrisOrder.method === 'qris' ? 'Masukkan' : 'Transfer'} nominal <strong>persis sampai 3 angka terakhir</strong> — itu kode pesanan Anda.</span>
+                  </div>
+                )}
+                <div className="mt-3 space-y-1 rounded-xl border border-border p-3 text-left text-xs text-muted-foreground">
+                  <div className="flex justify-between"><span>Harga e-book</span><span>{formatPrice(qrisOrder.baseAmount - qrisOrder.serviceFee)}</span></div>
+                  {qrisOrder.serviceFee > 0 && (
+                    <div className="flex justify-between"><span>Biaya layanan</span><span>{formatPrice(qrisOrder.serviceFee)}</span></div>
+                  )}
+                  <div className="flex justify-between"><span>Kode unik</span><span>{formatPrice(qrisOrder.uniqueCode)}</span></div>
+                  <div className="flex justify-between border-t border-border pt-1 font-bold text-maroon"><span>Total</span><span>{formatPrice(qrisOrder.finalAmount)}</span></div>
+                </div>
+              </div>
+
+              <div className="mt-1 border-t border-border pt-4">
+                <p className="mb-2 text-sm font-semibold text-ink">Sudah bayar? Unggah bukti <span className="text-hsk">*</span></p>
+                {/* Explicit ref.click() instead of a <label> wrapping the input:
+                    inside a Radix Dialog the label click gets swallowed by the
+                    focus-scope/scroll-lock on desktop, so no file was picked and
+                    the send button stayed disabled ("gabisa diklik di tab"). */}
+                <button
+                  type="button"
+                  onClick={() => proofInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-maroon/25 bg-paper p-4 transition-colors hover:border-maroon/45 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {proofPreview ? (
+                    <img src={proofPreview} className="max-h-32 rounded" alt="Preview bukti" />
+                  ) : proofFile ? (
+                    <span className="text-sm font-medium text-ink">{proofFile.name}</span>
+                  ) : (
+                    <>
+                      <Upload className="mb-1 h-6 w-6 text-maroon/50" />
+                      <span className="text-center text-xs text-muted-foreground">Klik untuk unggah (JPG/PNG/WEBP/PDF · maks 25 MB)</span>
+                    </>
+                  )}
+                </button>
+                <input ref={proofInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={onPickProof} disabled={uploading} />
+                {uploading && (
+                  <div className="mt-2">
+                    <Progress value={uploadProgress} className="h-2 bg-secondary [&>div]:bg-maroon" />
+                    <p className="mt-1 text-center text-xs text-muted-foreground">Mengunggah… {uploadProgress}%</p>
+                  </div>
+                )}
+                <Button onClick={uploadProof} disabled={uploading || !proofFile} className="mt-3 h-12 w-full rounded-full bg-maroon font-bold text-white hover:bg-maroon-deep">
+                  {uploading ? 'Mengunggah…' : 'Kirim Bukti Pembayaran'}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Footer />
+    </div>
+  );
 }
