@@ -330,13 +330,21 @@ export default function Read() {
     if (viewMode === 'scroll') handlePageChange(currentPageScroll);
   }, [currentPageScroll, viewMode]);
 
-  const handlePassQuiz = (pageId: number) => {
+  const handlePassQuiz = (pageId: number, score = 0, total = 0) => {
     setPassedQuizzes(prev => {
       if (prev.includes(pageId)) return prev;
       const newP = [...prev, pageId];
       localStorage.setItem(`passed_${slug}`, JSON.stringify(newP));
       return newP;
     });
+    // Record score to the leaderboard (only token-based readers have an identity).
+    if (accessTokenParam) {
+      fetch('/api/quiz-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: accessTokenParam, slug, pageId, score, total }),
+      }).catch(() => {}); // best-effort; never block reading on a leaderboard write
+    }
     setActiveQuizPage(null);
     toast.success("Hore! Kuis Lulus! Anda bisa lanjut membaca.");
   };
@@ -570,7 +578,7 @@ export default function Read() {
           isOpen={activeQuizPage !== null} 
           onClose={() => setActiveQuizPage(null)} 
           questions={activeQuizPage ? QUIZ_DATABASE[activeQuizPage] : []} 
-          onPass={() => activeQuizPage && handlePassQuiz(activeQuizPage)}
+          onPass={(score, total) => activeQuizPage && handlePassQuiz(activeQuizPage, score, total)}
           pageId={activeQuizPage || 0}
         />
 

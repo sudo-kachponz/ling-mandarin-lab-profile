@@ -245,7 +245,7 @@ interface QuizModalProps {
   isOpen: boolean;
   onClose: () => void;
   questions: Question[];
-  onPass: () => void;
+  onPass: (score: number, total: number) => void;
   pageId: number;
 }
 
@@ -299,7 +299,7 @@ export default function QuizModal({ isOpen, onClose, questions, onPass, pageId }
 
   const handleFinish = () => {
     if (isPassed) {
-      onPass();
+      onPass(score, questions.length);
       handleReset(); // reset for next time they open it manually
     } else {
       handleReset();
