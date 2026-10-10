@@ -469,10 +469,10 @@ export default function Store() {
                       }`}
                       style={active ? { borderColor: v.accent } : undefined}
                     >
-                      <img src={v.flag} alt={v.label} className="h-9 w-9 shrink-0 rounded-full md:h-10 md:w-10" />
+                      <img src={v.flag} alt={v.label} className="h-7 w-7 shrink-0 rounded-full sm:h-9 sm:w-9 md:h-10 md:w-10" />
                       <span className="flex min-w-0 flex-col">
-                        <span className="font-bold leading-tight text-ink">{v.label}</span>
-                        <span className="font-hanzi truncate text-xs text-muted-foreground">{v.sub}</span>
+                        <span className="truncate text-sm font-bold leading-tight text-ink sm:text-base">{v.label}</span>
+                        <span className="font-hanzi truncate text-[11px] text-muted-foreground sm:text-xs">{v.sub}</span>
                       </span>
                     </button>
                   );
