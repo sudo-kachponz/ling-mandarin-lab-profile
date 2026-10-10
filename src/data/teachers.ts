@@ -38,16 +38,16 @@ import oliviaTocfl2 from "@/assets/Laoshi/Olivia/olivia_tocfl_2.jpeg";
 import ayakaPhoto from "@/assets/Laoshi/Ayaka/ayakafoto.jpeg";
 import ayakaTocfl from "@/assets/Laoshi/Ayaka/tocflb2.pdf";
 import schoolNkust from "@/assets/School/science.svg";
-import schoolUph from "@/assets/School/UPH.svg";
-import taiyaPhoto from "@/assets/Laoshi/Taiya/taiya.svg";
-import taiyaHsk1 from "@/assets/Laoshi/Taiya/HSK6_1.jpeg";
-import taiyaHsk2 from "@/assets/Laoshi/Taiya/HSK6_2.pdf";
 import audreyPhoto from "@/assets/Laoshi/Audrey/audrey.svg";
 import audreyHsk from "@/assets/Laoshi/Audrey/audreyHSK5.pdf";
 import audreyTocfl from "@/assets/Laoshi/Audrey/audreytocfl.jpeg";
 import liaPhoto from "@/assets/Laoshi/Lia/ang.svg";
 import liaTocfl1 from "@/assets/Laoshi/Lia/lia_tocfl_1.jpg";
 import liaTocfl2 from "@/assets/Laoshi/Lia/lia_tocfl_2.jpg";
+import kennicePhoto from "@/assets/Laoshi/Kennice/kennice.svg";
+import kenniceScoreReport from "@/assets/Laoshi/Kennice/kennice_score_report.jpeg";
+import kenniceCertificate from "@/assets/Laoshi/Kennice/kennice_certificate.jpeg";
+import kenniceProficiency from "@/assets/Laoshi/Kennice/kennice_proficiency.jpeg";
 
 
 export interface TeacherCertificate {
@@ -86,8 +86,7 @@ const schoolOptions: Record<string, TeacherSchool> = {
   chinaMedicalShuinan: { name: "China Medical University Shuinan Campus", logo: schoolMedical },
   mntnu: { name: "Mandarin Training Center of National Taiwan Normal University", logo: schoolMntnu },
   fengchia: { name: "Taichung Fengchia University", logo: schoolFengchia },
-  nkust: { name: "National Kaohsiung University of Science and Technology", logo: schoolNkust },
-  uph: { name: "Universitas Pelita Harapan", logo: schoolUph }
+  nkust: { name: "National Kaohsiung University of Science and Technology", logo: schoolNkust }
 };
 
 const educationText = (schools: TeacherSchool[]) => schools.map((school) => school.name).join(" / ");
@@ -267,23 +266,6 @@ export const teachers: Teacher[] = [
     ]
   },
   {
-    id: 12,
-    name: "Janice Taiya",
-    mandarinName: "戴美钿 Janice Taiya Laoshi",
-    location: "Online",
-    schools: [schoolOptions.uph],
-    education: educationText([schoolOptions.uph]),
-    photo: taiyaPhoto,
-    degree: "Sertifikasi HSK 6",
-    xinzhongBackground: "Lulusan Universitas Pelita Harapan.",
-    certification: "HSK 6",
-    experience: "Berpengalaman mengajar bahasa Mandarin.",
-    certificates: [
-      { label: "HSK 6 (1) - Janice", file: taiyaHsk1, type: "image" },
-      { label: "HSK 6 (2) - Janice", file: taiyaHsk2, type: "pdf" }
-    ]
-  },
-  {
     id: 13,
     name: "Audrey",
     mandarinName: "劉如玉 Audrey Laoshi",
@@ -315,6 +297,24 @@ export const teachers: Teacher[] = [
     certificates: [
       { label: "Sertifikat Lia Angeline", file: liaTocfl1, type: "image" },
       { label: "TOCFL Score Report", file: liaTocfl2, type: "image" }
+    ]
+  },
+  {
+    id: 15,
+    name: "Kennice Xaviera",
+    mandarinName: "黃鏸瑩 Kennice Laoshi",
+    location: "Online",
+    schools: [schoolOptions.ntcust],
+    education: educationText([schoolOptions.ntcust]),
+    photo: kennicePhoto,
+    degree: "Sertifikasi TOCFL C1",
+    xinzhongBackground: "Lulusan NTCUST, bersertifikat TOCFL C1.",
+    certification: "TOCFL C1",
+    experience: "Berpengalaman mengajar bahasa Mandarin.",
+    certificates: [
+      { label: "TOCFL Score Report - Kennice", file: kenniceScoreReport, type: "image" },
+      { label: "TOCFL Certificate - Kennice", file: kenniceCertificate, type: "image" },
+      { label: "Proficiency Description - Kennice", file: kenniceProficiency, type: "image" }
     ]
   }
 ];

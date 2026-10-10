@@ -14,8 +14,41 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import radikalVideo1 from '@/assets/Phone/radikal-1.mp4';
 import radikalVideo2 from '@/assets/Phone/radikal-2.mp4';
+import chinaFlag from '@/assets/Flag/china.svg';
+import taiwanFlag from '@/assets/Flag/taiwan.svg';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+// The store sells the SAME book in two character sets. Each variant maps to a
+// product row by slug; compare-at + preview PDF live here (not in the DB) since
+// they're just marketing copy. Sale price always comes from the DB (product.price).
+type VersionKey = 'simplified' | 'traditional';
+const VARIANTS: Record<VersionKey, {
+  slug: string; label: string; sub: string; flag: string; accent: string;
+  compareAt: number; preview: string; note: string;
+}> = {
+  simplified: {
+    slug: 'test-ebook-qris',
+    label: 'Simplified',
+    sub: '简体字 · China',
+    flag: chinaFlag,
+    accent: '#E63946',
+    compareAt: 75000,
+    preview: '/Lingchinenese.pdf',
+    note: 'Hanzi lebih sederhana (bentuk disederhanakan), dipakai di China, Singapura, Malaysia. Cocok untuk pemula, ujian HSK, dan bisnis.',
+  },
+  traditional: {
+    slug: 'rahasia-huruf-mandarin-tw',
+    label: 'Traditional',
+    sub: '繁體字 · Taiwan',
+    flag: taiwanFlag,
+    accent: '#2563eb',
+    compareAt: 85000,
+    preview: '/Lingchinenese-tw-preview.pdf',
+    note: 'Hanzi lebih rumit (goresan lebih banyak, bentuk asli), dipakai di Taiwan, Hong Kong, Makau. Cocok untuk ujian TOCFL dan budaya/literatur klasik.',
+  },
+};
+const rp = (n: number) => 'Rp ' + n.toLocaleString('id-ID');
 
 const ACCEPTED: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -95,6 +128,7 @@ export default function Store() {
   const [loading, setLoading] = useState(true);
   const [previewPage, setPreviewPage] = useState(1); // 1, 2, 3 = preview pages, 4 = locked purchase page
   const [videoIdx, setVideoIdx] = useState(0); // 0/1 = slideable radikal explainer videos in top phone
+  const [version, setVersion] = useState<VersionKey>('simplified'); // Simplified (China) ↔ Traditional (Taiwan)
 
   // Checkout form states
   const [buyerName, setBuyerName] = useState('');
@@ -142,6 +176,15 @@ export default function Store() {
     fetchProducts();
   }, []);
 
+  // Which product the toggle currently points at (fall back to first/mock if the
+  // matching slug isn't in the DB yet, so the page never breaks).
+  const variant = VARIANTS[version];
+  const selected = products.find((p) => p.slug === variant.slug) || products[0] || mockProduct;
+  const salePrice = selected.price;
+  const compareAt = variant.compareAt;
+  const discountPct = Math.round((1 - salePrice / compareAt) * 100);
+  const previewFile = variant.preview;
+
   const formatPrice = (price: number) => {
     const formatted = new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -175,7 +218,7 @@ export default function Store() {
       return;
     }
 
-    const targetProduct = products.length > 0 ? products[0] : mockProduct;
+    const targetProduct = selected;
 
     // Both methods create an awaiting_verification order and open the same popup
     // (exact nominal + unique code + upload proof) — no page hops, no WhatsApp
@@ -291,6 +334,32 @@ export default function Store() {
               {/* Highlight Section (Video Phone Frame + Copywriting) */}
               <div className="mb-16 grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] bg-white rounded-3xl p-6 md:p-10 shadow-soft border border-[#6A2B2B]/10">
 
+                {/* Versi toggle: Simplified (China) ↔ Traditional (Taiwan) */}
+                <div className="lg:col-span-2 flex flex-col items-center text-center gap-4 pb-2">
+                  <h3 className="text-lg md:text-xl font-extrabold text-foreground">Pilih Versi E-Book</h3>
+                  <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
+                    {(['simplified', 'traditional'] as VersionKey[]).map((key) => {
+                      const v = VARIANTS[key];
+                      const active = version === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => { setVersion(key); setPreviewPage(1); }}
+                          className={`flex items-center gap-3 rounded-2xl border-2 p-3 md:p-4 transition-all text-left ${active ? 'bg-[#6A2B2B]/5 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
+                          style={active ? { borderColor: v.accent } : undefined}
+                        >
+                          <img src={v.flag} alt={v.label} className="h-9 w-9 md:h-11 md:w-11 rounded-full shadow-sm shrink-0" />
+                          <span className="flex flex-col">
+                            <span className="font-bold text-foreground leading-tight">{v.label}</span>
+                            <span className="text-xs text-muted-foreground">{v.sub}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Video Penjelasan in Phone Frame (slideable, like homepage) */}
                 <div className="flex justify-center">
                   <div className="relative w-[280px] h-[580px] overflow-hidden rounded-[2.5rem] border-[8px] border-black bg-zinc-950 shadow-xl ring-4 ring-[#6A2B2B]/10 flex flex-col justify-between select-none">
@@ -357,20 +426,33 @@ export default function Store() {
 
                 {/* Marketing Copy */}
                 <div className="space-y-6">
-                  <div className="inline-block px-4 py-1.5 rounded-full bg-[#6A2B2B]/10 text-[#6A2B2B] text-sm font-bold tracking-wide">
-                    E-BOOK TERBARU
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-block px-4 py-1.5 rounded-full bg-[#6A2B2B]/10 text-[#6A2B2B] text-sm font-bold tracking-wide">
+                      E-BOOK TERBARU
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold text-white" style={{ backgroundColor: variant.accent }}>
+                      <img src={variant.flag} alt="" className="h-4 w-4 rounded-full" /> {variant.label}
+                    </span>
                   </div>
                   <h2 className="text-3xl md:text-5xl font-black text-foreground leading-tight">
                     Rahasia Huruf Mandarin <span className="text-[#6A2B2B]">(Vol. 1)</span>
                   </h2>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="line-through text-muted-foreground text-lg md:text-xl font-bold">Rp 75.000</span>
-                    <span className="text-[#6A2B2B] text-2xl md:text-3xl font-black">Rp 60.000</span>
-                    <span className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">DISCOUNT 20%</span>
+                    <span className="line-through text-muted-foreground text-lg md:text-xl font-bold">{rp(compareAt)}</span>
+                    <span className="text-[#6A2B2B] text-2xl md:text-3xl font-black">{rp(salePrice)}</span>
+                    <span className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">DISCOUNT {discountPct}%</span>
                   </div>
                   <p className="text-lg text-muted-foreground leading-relaxed">
                     Buku panduan komprehensif menguasai dasar-dasar huruf Mandarin (Hanzi). Dirancang khusus dengan metode yang terstruktur agar proses belajar menjadi lebih mudah, cepat, dan menyenangkan.
                   </p>
+
+                  {/* Penjelasan versi — ditaruh di sini (area marketing) biar gampang dinotice */}
+                  <div className="flex items-start gap-3 rounded-2xl p-4 border-l-4 bg-[#6A2B2B]/5" style={{ borderColor: variant.accent }}>
+                    <img src={variant.flag} alt={variant.label} className="h-8 w-8 rounded-full shadow-sm shrink-0 mt-0.5" />
+                    <p className="text-sm md:text-[15px] text-foreground/80 leading-relaxed">
+                      <strong style={{ color: variant.accent }}>{variant.label} ({variant.sub}):</strong> {variant.note}
+                    </p>
+                  </div>
 
                   <div className="space-y-4 pt-2">
                     <div className="flex items-center gap-4 bg-[#6A2B2B]/5 p-3 rounded-xl border border-[#6A2B2B]/10">
@@ -459,8 +541,8 @@ export default function Store() {
                           <span className="font-bold text-foreground">Scan QRIS</span>
                         </div>
                         <div className="mt-auto flex items-baseline gap-2 flex-wrap">
-                          <span className="text-xs line-through text-muted-foreground font-semibold">Rp 75.000</span>
-                          <span className="text-lg font-black text-[#6A2B2B]">Rp 60.000</span>
+                          <span className="text-xs line-through text-muted-foreground font-semibold">{rp(compareAt)}</span>
+                          <span className="text-lg font-black text-[#6A2B2B]">{rp(salePrice)}</span>
                           <span className="text-[10px] text-muted-foreground">(+ kode unik 3 digit)</span>
                         </div>
                       </div>
@@ -477,8 +559,8 @@ export default function Store() {
                           <span className="font-bold text-foreground">Transfer Bank (Manual)</span>
                         </div>
                         <div className="mt-auto flex items-baseline gap-2 flex-wrap">
-                          <span className="text-xs line-through text-muted-foreground font-semibold">Rp 75.000</span>
-                          <span className="text-lg font-black text-[#6A2B2B]">Rp 60.000</span>
+                          <span className="text-xs line-through text-muted-foreground font-semibold">{rp(compareAt)}</span>
+                          <span className="text-lg font-black text-[#6A2B2B]">{rp(salePrice)}</span>
                           <span className="text-[10px] text-muted-foreground">(+ kode unik 3 digit)</span>
                         </div>
                       </div>
@@ -499,13 +581,13 @@ export default function Store() {
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Harga E-Book</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs line-through text-muted-foreground font-semibold">Rp 75.000</span>
-                        <span className="font-semibold text-foreground">Rp 60.000</span>
+                        <span className="text-xs line-through text-muted-foreground font-semibold">{rp(compareAt)}</span>
+                        <span className="font-semibold text-foreground">{rp(salePrice)}</span>
                       </div>
                     </div>
                     <div className="border-t border-dashed my-2 pt-2 flex justify-between font-bold text-base text-[#6A2B2B]">
                       <span>Total Bayar</span>
-                      <span>Rp 60.000</span>
+                      <span>{rp(salePrice)}</span>
                     </div>
                   </div>
 
@@ -546,7 +628,7 @@ export default function Store() {
                       {previewPage <= 3 ? (
                         <div className="w-full flex-1 flex items-center justify-center bg-white overflow-hidden p-1">
                           <Document
-                            file="/Lingchinenese.pdf"
+                            file={previewFile}
                             loading={
                               <div className="flex flex-col items-center justify-center text-zinc-400 p-4">
                                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent border-[#6A2B2B] mb-2" />

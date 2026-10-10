@@ -36,12 +36,22 @@ type Order = {
   status: string;
   paymentMethod: string | null;
   productTitle: string;
+  productSlug?: string;
   proofUrl: string | null;
   createdAt: string;
 };
 
 const formatPrice = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+
+// Which character-set version an order is for, derived from the product slug.
+// Lets the admin see at a glance whether to expect a Simplified or Traditional
+// reader link (the link itself is already bound to the order's product).
+function versionBadge(slug?: string) {
+  if (slug === 'rahasia-huruf-mandarin-tw') return { label: 'Traditional 🇹🇼', cls: 'bg-blue-100 text-blue-700 border-blue-200' };
+  if (slug === 'test-ebook-qris') return { label: 'Simplified 🇨🇳', cls: 'bg-red-100 text-red-700 border-red-200' };
+  return null;
+}
 
 function deliveryMessage(o: Order, accessUrl: string) {
   return (
@@ -422,7 +432,14 @@ export default function AdminDashboard() {
                     </span>
                   </div>
                   <span className="font-mono text-xs text-muted-foreground">{o.orderRef}</span>
-                  <h3 className="font-bold text-foreground">{o.productTitle}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-foreground">{o.productTitle}</h3>
+                    {versionBadge(o.productSlug) && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${versionBadge(o.productSlug)!.cls}`}>
+                        {versionBadge(o.productSlug)!.label}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     <p>{o.buyerName} — {o.buyerEmail}</p>
                     <p>WA: {o.buyerWhatsapp} · {o.paymentMethod?.toUpperCase() || '—'}</p>

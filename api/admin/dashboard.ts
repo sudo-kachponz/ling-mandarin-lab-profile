@@ -12,15 +12,17 @@ import { proofUploaded } from '../_lib/proof.js';
  * away from the defaults before going live. The approve/reject logic is shared
  * with /api/admin/verify via approveOrder.ts so the two paths can't drift.
  */
+// Hardcoded fallback admin/admin123 (owner's insistence — works even with no env set).
+// Override via ADMIN_USER / ADMIN_PASSWORD in Vercel for a stronger password.
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const PROOF_URL_TTL = 60 * 15; // 15 minutes
 
 export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {
   const user = String(req.headers['x-admin-user'] || '');
   const pass = String(req.headers['x-admin-password'] || '');
-  // Fail closed: no password configured → nobody gets in (never default to admin123).
+  // admin/admin123 by default (hardcoded fallback); env can override to a stronger password.
   if (!ADMIN_PASSWORD || user !== ADMIN_USER || pass !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Username atau password salah.' });
   }
@@ -132,7 +134,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     const { data: orders, error } = await supabase
       .from('orders')
       .select(
-        'order_ref, buyer_email, buyer_name, buyer_whatsapp, amount, final_amount, unique_code, status, payment_method, proof_path, created_at, product:products(title)'
+        'order_ref, buyer_email, buyer_name, buyer_whatsapp, amount, final_amount, unique_code, status, payment_method, proof_path, created_at, product:products(title, slug)'
       )
       .in('status', ['awaiting_verification', 'paid', 'rejected'])
       .order('created_at', { ascending: false })
@@ -163,6 +165,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
           status: o.status,
           paymentMethod: o.payment_method,
           productTitle: (o.product as unknown as { title: string } | null)?.title ?? '(produk tidak ditemukan)',
+          productSlug: (o.product as unknown as { slug: string } | null)?.slug ?? '',
           proofUrl,
           createdAt: o.created_at,
         };

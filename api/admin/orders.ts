@@ -21,7 +21,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     const { data: orders, error } = await supabase
       .from('orders')
       .select(
-        'order_ref, buyer_email, buyer_name, buyer_whatsapp, amount, final_amount, unique_code, expires_at, proof_path, created_at, product:products(title)'
+        'order_ref, buyer_email, buyer_name, buyer_whatsapp, amount, final_amount, unique_code, expires_at, proof_path, created_at, product:products(title, slug)'
       )
       .eq('status', 'awaiting_verification')
       .order('created_at', { ascending: false });
@@ -47,6 +47,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
           uniqueCode: o.unique_code,
           expiresAt: o.expires_at,
           productTitle: (o.product as unknown as { title: string } | null)?.title ?? '(produk tidak ditemukan)',
+          productSlug: (o.product as unknown as { slug: string } | null)?.slug ?? '',
           proofUrl,
           createdAt: o.created_at,
         };

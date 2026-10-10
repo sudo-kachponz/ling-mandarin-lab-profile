@@ -1,8 +1,22 @@
+import { randomUUID } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { decideDeviceAccess } from './_lib/deviceLock.js';
 import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
 
-const MAX_DEVICES = 2; // phone + laptop
+const MAX_DEVICES = 3; // phone + laptop + tablet — matches the "maksimal 3 perangkat" promise in the access email/admin UI
+
+// Device identity lives in a server-set HttpOnly cookie, NOT localStorage. Safari/iOS
+// ITP wipes localStorage every ~7 days, which made the SAME iPad mint a fresh deviceId
+// on each visit and burn through every slot → buyers falsely locked out. A first-party
+// cookie set by the server survives ITP, so the device stays recognised.
+const DEVICE_COOKIE = 'reader_device_id';
+const DEVICE_COOKIE_MAXAGE = 60 * 60 * 24 * 365; // 1 year
+
+function readCookie(header: string | undefined, name: string): string | null {
+  if (!header) return null;
+  const m = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return m ? decodeURIComponent(m[1]) : null;
+}
 
 async function signPdf(
   pdfPath: string,
@@ -31,10 +45,17 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
   try {
     const { slug, productId, token, deviceId } = req.body || {};
 
-    // ── No-email access path: a magic-link token bound to <=2 devices ──────────
+    // ── No-email access path: a magic-link token bound to a few devices ────────
     if (token) {
-      if (!deviceId) {
-        return res.status(400).json({ error: 'deviceId is required' });
+      // Prefer the cookie (stable across Safari localStorage wipes); the client-sent
+      // deviceId is only a seed on first open, after which the cookie is authoritative.
+      const cookieDeviceId = readCookie(req.headers.cookie, DEVICE_COOKIE);
+      const effectiveDeviceId = cookieDeviceId || deviceId || randomUUID();
+      if (!cookieDeviceId) {
+        res.setHeader(
+          'Set-Cookie',
+          `${DEVICE_COOKIE}=${encodeURIComponent(effectiveDeviceId)}; Path=/; Max-Age=${DEVICE_COOKIE_MAXAGE}; HttpOnly; Secure; SameSite=Lax`
+        );
       }
       const { data: order } = await supabase
         .from('orders')
@@ -50,7 +71,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       // device under simultaneous first-opens. Fine at this volume; tighten with
       // a DB function if it ever matters.
       const devices: string[] = order.access_devices || [];
-      const decision = decideDeviceAccess(devices, deviceId, MAX_DEVICES);
+      const decision = decideDeviceAccess(devices, effectiveDeviceId, MAX_DEVICES);
       if (decision === 'deny') {
         return res.status(403).json({
           error: `Akses e-book ini sudah terdaftar di ${MAX_DEVICES} perangkat. Kalau Anda mengganti perangkat atau membersihkan data browser, hubungi kami dengan menyertakan kode pesanan ${order.order_ref}.`,
@@ -61,7 +82,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       if (decision === 'claim') {
         const { error: bindErr } = await supabase
           .from('orders')
-          .update({ access_devices: [...devices, deviceId] })
+          .update({ access_devices: [...devices, effectiveDeviceId] })
           .eq('id', order.id);
         if (bindErr) return res.status(500).json({ error: 'Gagal mengaktifkan perangkat.' });
       }

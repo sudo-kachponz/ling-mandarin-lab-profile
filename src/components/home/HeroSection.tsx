@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, BookOpen } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { whatsappUrl } from "@/data/stats";
 import logoFull from "@/assets/LOGO.svg";
@@ -19,7 +19,6 @@ import schoolXinZhong from "@/assets/School/xin_zhong.svg";
 import schoolFengchia from "@/assets/School/fengchia.svg";
 import schoolMntnu from "@/assets/School/mntnu.svg";
 import schoolNkust from "@/assets/School/science.svg";
-import schoolUph from "@/assets/School/UPH.svg";
 import whatsappIcon from "@/assets/Medsos/wa.svg";
 
 const highlightPoints = [
@@ -34,8 +33,7 @@ const schoolLogos = [
   { src: schoolMedical, alt: "China Medical University, Taichung" },
   { src: schoolFengchia, alt: "Taichung Fengchia University" },
   { src: schoolMntnu, alt: "Mandarin Training Center of National Taiwan Normal University" },
-  { src: schoolNkust, alt: "National Kaohsiung University of Science and Technology" },
-  { src: schoolUph, alt: "Universitas Pelita Harapan" }
+  { src: schoolNkust, alt: "National Kaohsiung University of Science and Technology" }
 ];
 
 const flagList = [
@@ -184,19 +182,6 @@ const HeroSection = () => {
               </Button>
 
               <Button
-                size="lg"
-                onClick={() => navigate('/store')}
-                className="relative py-5 md:py-8 lg:px-6 w-full md:w-auto sm:min-w-[220px] flex-1 rounded-full bg-[#6A2B2B] hover:bg-[#522121] text-white shadow-lg border-2 border-transparent"
-              >
-                <span className="flex w-full items-center justify-center gap-2">
-                  <BookOpen className="size-5 sm:size-7 shrink-0" />
-                  <p className="text-sm sm:text-lg font-bold whitespace-nowrap">
-                    Beli E-Book (DISC 75k → 60k)
-                  </p>
-                </span>
-              </Button>
-
-              <Button
                 onClick={scrollToTeachers}
                 variant="outline"
                 size="lg"
@@ -208,6 +193,34 @@ const HeroSection = () => {
                 </span>
               </Button>
             </div>
+
+            {/* E-book promo — Shopee-style ad card (dipindah dari ProgramsSection, menggantikan tombol Beli E-Book) */}
+            <button
+              onClick={() => navigate('/store')}
+              className="group w-full text-left rounded-3xl bg-gradient-to-r from-[#6A2B2B] to-[#8a3a3a] text-white p-4 sm:p-5 shadow-lg hover:shadow-xl transition-all flex items-center gap-4"
+            >
+              {/* Cover + intip isi (webp kecil, lazy) */}
+              <div className="hidden sm:block shrink-0 relative w-[120px] h-[132px]">
+                <img src="/ebook-inside-1.webp" alt="" loading="lazy" className="absolute left-9 top-4 w-16 rounded shadow-lg rotate-[8deg] ring-1 ring-black/10" />
+                <img src="/ebook-inside-2.webp" alt="" loading="lazy" className="absolute left-1 top-3 w-16 rounded shadow-lg -rotate-[8deg] ring-1 ring-black/10" />
+                <img src="/ebook-cover.webp" alt="Cover Rahasia Huruf Mandarin" loading="lazy" className="absolute left-5 top-0 w-[72px] rounded shadow-xl ring-1 ring-black/20" />
+              </div>
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/15 text-[10px] sm:text-xs font-bold tracking-wide">E-BOOK LING CHINESE LAB</span>
+                <h3 className="text-lg sm:text-2xl font-black leading-tight">Rahasia Huruf Mandarin <span className="text-[#E5B869]">(Vol. 1)</span></h3>
+                <div className="flex items-center gap-3 flex-wrap text-xs sm:text-sm font-semibold">
+                  <span className="inline-flex items-center gap-1.5"><img src={flagChina} alt="" className="h-4 w-4 rounded-full" /> Simplified</span>
+                  <span className="inline-flex items-center gap-1.5"><img src={flagTaiwan} alt="" className="h-4 w-4 rounded-full" /> Traditional</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="line-through text-white/55 text-xs sm:text-sm">Rp 85.000</span>
+                  <span className="text-[#E5B869] text-lg sm:text-xl font-black">mulai Rp 60.000</span>
+                </div>
+              </div>
+              <span className="shrink-0 hidden sm:inline-flex items-center rounded-full bg-[#E5B869] text-[#331111] font-extrabold px-5 py-3 text-sm group-hover:bg-[#D4A758] transition-colors">
+                Lihat E-Book
+              </span>
+            </button>
 
             <div className="flex flex-wrap items-center gap-3 pt-4">
               <span className="text-sm font-medium uppercase tracking-[0.35em] text-muted-foreground">

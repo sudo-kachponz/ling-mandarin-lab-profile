@@ -34,9 +34,18 @@ type AdminOrder = {
   uniqueCode: number | null;
   expiresAt: string | null;
   productTitle: string;
+  productSlug?: string;
   proofUrl: string | null;
   createdAt: string;
 };
+
+// Simplified/Traditional badge from the product slug so the admin knows which
+// version (and thus which reader link) an order is for.
+function versionBadge(slug?: string) {
+  if (slug === 'rahasia-huruf-mandarin-tw') return { label: 'Traditional 🇹🇼', cls: 'bg-blue-100 text-blue-700 border-blue-200' };
+  if (slug === 'test-ebook-qris') return { label: 'Simplified 🇨🇳', cls: 'bg-red-100 text-red-700 border-red-200' };
+  return null;
+}
 
 /** Hours until an order expires, or null if no expiry. */
 function hoursLeft(expiresAt: string | null): number | null {
@@ -346,7 +355,14 @@ export default function AdminVerify() {
                     )}
                   </div>
                   <span className="font-mono text-xs text-muted-foreground">{o.orderRef}</span>
-                  <h3 className="font-bold text-foreground">{o.productTitle}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-foreground">{o.productTitle}</h3>
+                    {versionBadge(o.productSlug) && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${versionBadge(o.productSlug)!.cls}`}>
+                        {versionBadge(o.productSlug)!.label}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     <p>{o.buyerName} — {o.buyerEmail}</p>
                     <p>WA: {o.buyerWhatsapp}</p>

@@ -222,6 +222,7 @@ export default function Read() {
           const res = await fetch('/api/get-reader-url', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // send/receive the reader_device_id cookie (stable device id)
             body: JSON.stringify({ slug, token: accessTokenParam, deviceId }),
           });
           if (!res.ok) {
