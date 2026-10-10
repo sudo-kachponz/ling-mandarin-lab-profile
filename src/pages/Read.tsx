@@ -339,7 +339,7 @@ export default function Read() {
     });
     // Record score to the leaderboard (only token-based readers have an identity).
     if (accessTokenParam) {
-      fetch('/api/quiz-submit', {
+      fetch('/api/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: accessTokenParam, slug, pageId, score, total }),
