@@ -140,14 +140,6 @@ const HeroSection = () => {
                 />
               ))}
             </div>
-            <div className="mt-2 flex justify-center gap-1.5" aria-hidden>
-              {pandaSlides.map((p, i) => (
-                <span
-                  key={p.alt}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${activeSlide === i ? "w-5 bg-maroon" : "w-1.5 bg-maroon/25"}`}
-                />
-              ))}
-            </div>
           </div>
 
           {/* Teks & aksi */}
