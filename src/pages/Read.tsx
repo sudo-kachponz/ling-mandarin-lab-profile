@@ -23,8 +23,8 @@ const PDF_OPTIONS = {
 };
 
 // Wrapper komponen halaman untuk HTMLFlipBook (wajib pakai forwardRef).
-const PdfPageWrapper = React.forwardRef<HTMLDivElement, { pageNum: number, height: number, active: boolean }>(
-  ({ pageNum, height, active }, ref) => {
+const PdfPageWrapper = React.forwardRef<HTMLDivElement, { pageNum: number, height: number, active: boolean, dpr?: number }>(
+  ({ pageNum, height, active, dpr }, ref) => {
     return (
       <div ref={ref} className="bg-white overflow-hidden shadow-inner cursor-pointer flex items-center justify-center" data-density="soft" style={{ height }}>
         {active ? (
@@ -32,6 +32,7 @@ const PdfPageWrapper = React.forwardRef<HTMLDivElement, { pageNum: number, heigh
             pageNumber={pageNum}
             renderTextLayer={false}
             renderAnnotationLayer={false}
+            devicePixelRatio={dpr}
             className="pointer-events-none flex items-center justify-center w-full h-full [&_.react-pdf__Page__canvas]:!w-full [&_.react-pdf__Page__canvas]:!h-full [&_.react-pdf__Page__canvas]:!object-fill"
             height={height}
           />
@@ -75,7 +76,9 @@ export default function Read() {
   
   const { user } = useAuth();
   const buyerEmail = user?.email || "Tamu / Guest";
-  const pdfDpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2);
+  // Render at the device's real pixel ratio (capped at 3) so hanzi stay crisp on
+  // high-DPI phones — capping at 2 under-sampled retina screens and looked blurry.
+  const pdfDpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 3);
   const displayTitle = buyerName || (slug === 'test' ? 'E-Book Ling Chinese Lab Volume I' : slug);
   
   type FlipBookApi = {
@@ -635,7 +638,7 @@ export default function Read() {
                     // Render only the pages near the current spread; the rest are
                     // lightweight placeholders until the reader flips close.
                     const active = Math.abs(p - currentPage) <= 3;
-                    return <PdfPageWrapper key={`page_${p}`} pageNum={p} height={bookDim.height} active={active} />;
+                    return <PdfPageWrapper key={`page_${p}`} pageNum={p} height={bookDim.height} active={active} dpr={pdfDpr} />;
                   })}
                 </HTMLFlipBook>
               </div>
