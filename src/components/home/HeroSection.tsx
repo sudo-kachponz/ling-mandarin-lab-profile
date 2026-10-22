@@ -241,9 +241,9 @@ const HeroSection = () => {
                 ))}
               </div>
             </div>
-            <ul className="grid flex-1 grid-cols-4 items-center gap-x-4 gap-y-4 sm:grid-cols-4 lg:grid-cols-8">
+            <ul className="flex flex-1 flex-wrap items-center justify-center gap-x-4 gap-y-4">
               {schoolLogos.map((school) => (
-                <li key={school.alt} className="flex h-14 items-center justify-center sm:h-16" title={school.alt}>
+                <li key={school.alt} className="flex h-14 basis-[calc(25%-0.75rem)] items-center justify-center sm:h-16 lg:basis-[calc(11.111%-0.889rem)]" title={school.alt}>
                   <img src={school.src} alt={school.alt} loading="lazy" className="max-h-full w-full object-contain" />
                 </li>
               ))}
