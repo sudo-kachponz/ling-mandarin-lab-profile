@@ -44,10 +44,10 @@ import audreyTocfl from "@/assets/Laoshi/Audrey/audreytocfl.jpeg";
 import liaPhoto from "@/assets/Laoshi/Lia/ang.svg";
 import liaTocfl1 from "@/assets/Laoshi/Lia/lia_tocfl_1.jpg";
 import liaTocfl2 from "@/assets/Laoshi/Lia/lia_tocfl_2.jpg";
-import kennicePhoto from "@/assets/Laoshi/Kennice/kennice.svg";
-import kenniceScoreReport from "@/assets/Laoshi/Kennice/kennice_score_report.jpeg";
-import kenniceCertificate from "@/assets/Laoshi/Kennice/kennice_certificate.jpeg";
-import kenniceProficiency from "@/assets/Laoshi/Kennice/kennice_proficiency.jpeg";
+import jesslynPhoto from "@/assets/Laoshi/Jesslyn/jesslyn.svg";
+import jesslynHsk from "@/assets/Laoshi/Jesslyn/jesslyn_hsk6.pdf";
+import jesslynIelts from "@/assets/Laoshi/Jesslyn/jesslyn_ielts.pdf";
+import schoolRitsumeikan from "@/assets/School/ritsumeikan.svg";
 
 
 export interface TeacherCertificate {
@@ -86,7 +86,8 @@ const schoolOptions: Record<string, TeacherSchool> = {
   chinaMedicalShuinan: { name: "China Medical University Shuinan Campus", logo: schoolMedical },
   mntnu: { name: "Mandarin Training Center of National Taiwan Normal University", logo: schoolMntnu },
   fengchia: { name: "Taichung Fengchia University", logo: schoolFengchia },
-  nkust: { name: "National Kaohsiung University of Science and Technology", logo: schoolNkust }
+  nkust: { name: "National Kaohsiung University of Science and Technology", logo: schoolNkust },
+  ritsumeikan: { name: "Ritsumeikan Asia Pacific University", logo: schoolRitsumeikan }
 };
 
 const educationText = (schools: TeacherSchool[]) => schools.map((school) => school.name).join(" / ");
@@ -301,20 +302,19 @@ export const teachers: Teacher[] = [
   },
   {
     id: 15,
-    name: "Kennice Xaviera",
-    mandarinName: "黃鏸瑩 Kennice Laoshi",
+    name: "Jesslyn Jonodihardjo",
+    mandarinName: "杨启莉 Jesslyn Laoshi",
     location: "Online",
-    schools: [schoolOptions.ntcust],
-    education: educationText([schoolOptions.ntcust]),
-    photo: kennicePhoto,
-    degree: "Sertifikasi TOCFL C1",
-    xinzhongBackground: "Lulusan NTCUST, bersertifikat TOCFL C1.",
-    certification: "TOCFL C1",
+    schools: [schoolOptions.ritsumeikan],
+    education: educationText([schoolOptions.ritsumeikan]),
+    photo: jesslynPhoto,
+    degree: "HSK 6 • IELTS 7.0 • JLPT N3",
+    xinzhongBackground: "Lulusan Ritsumeikan Asia Pacific University, bersertifikat HSK 6, IELTS 7.0, dan JLPT N3.",
+    certification: "HSK 6 • IELTS 7.0 • JLPT N3",
     experience: "Berpengalaman mengajar bahasa Mandarin.",
     certificates: [
-      { label: "TOCFL Score Report - Kennice", file: kenniceScoreReport, type: "image" },
-      { label: "TOCFL Certificate - Kennice", file: kenniceCertificate, type: "image" },
-      { label: "Proficiency Description - Kennice", file: kenniceProficiency, type: "image" }
+      { label: "HSK 6 - Jesslyn", file: jesslynHsk, type: "pdf" },
+      { label: "IELTS 7.0 - Jesslyn", file: jesslynIelts, type: "pdf" }
     ]
   }
 ];
