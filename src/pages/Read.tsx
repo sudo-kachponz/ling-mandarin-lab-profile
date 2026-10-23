@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { ZoomIn, ZoomOut, BookOpen, Scroll, ChevronLeft, Bookmark, Sparkles, Lock, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
-import QuizModal, { QUIZ_DATABASE, QUIZ_TITLES } from '@/components/reader/QuizModal';
+import QuizModal, { QUIZ_DATABASE, QUIZ_TITLES, QUIZ_DATABASE_TW, QUIZ_TITLES_TW } from '@/components/reader/QuizModal';
 import { Input } from '@/components/ui/input';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -47,6 +47,9 @@ PdfPageWrapper.displayName = 'PdfPageWrapper';
 
 export default function Read() {
   const { slug } = useParams();
+  // Traditional (Taiwan) e-book uses the Traditional-character quiz set; others use Simplified.
+  const QZ = slug?.endsWith('-tw') ? QUIZ_DATABASE_TW : QUIZ_DATABASE;
+  const QZT = slug?.endsWith('-tw') ? QUIZ_TITLES_TW : QUIZ_TITLES;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const accessTokenParam = searchParams.get('t');
@@ -305,7 +308,7 @@ export default function Read() {
   // Evaluasi perpindahan halaman
   const handlePageChange = (newPage: number) => {
     // Cek apakah mereka melewati halaman kuis yang belum lulus
-    const quizPages = Object.keys(QUIZ_DATABASE).map(Number).sort((a, b) => a - b);
+    const quizPages = Object.keys(QZ).map(Number).sort((a, b) => a - b);
     
     // Cari apakah ada halaman kuis yang ada di ANTARA (atau SAMA DENGAN) halaman yang mereka lewati, dan belum lulus
     // Misal: mereka dari halaman 10, mau ke halaman 12. Kuis ada di halaman 11.
@@ -369,7 +372,7 @@ export default function Read() {
        return;
     }
     
-    const quizPages = Object.keys(QUIZ_DATABASE).map(Number).sort((a, b) => a - b);
+    const quizPages = Object.keys(QZ).map(Number).sort((a, b) => a - b);
     const lockedPage = quizPages.find(qp => p > qp && !passedQuizzes.includes(qp));
     if (lockedPage) {
       toast.error(`Anda harus lulus kuis di halaman ${lockedPage} terlebih dahulu!`);
@@ -557,11 +560,11 @@ export default function Read() {
         </div>
 
         {/* FLOATING QUIZ BUTTON */}
-        {slug === 'test' && (QUIZ_DATABASE[currentPage] || QUIZ_DATABASE[currentPage + 1]) && (
+        {slug === 'test' && (QZ[currentPage] || QZ[currentPage + 1]) && (
           <div className="fixed bottom-24 right-4 md:right-8 z-50 animate-bounce">
             {(() => {
                // Cari halaman kuis yang relevan (bisa currentPage atau currentPage + 1 di mode spread desktop)
-               const quizPage = QUIZ_DATABASE[currentPage] ? currentPage : currentPage + 1;
+               const quizPage = QZ[currentPage] ? currentPage : currentPage + 1;
                const isPassed = passedQuizzes.includes(quizPage);
                
                return (
@@ -570,7 +573,7 @@ export default function Read() {
                    className={`${isPassed ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'} text-white shadow-2xl rounded-full px-4 md:px-6 py-4 md:py-6 text-sm md:text-lg font-bold border-4 border-white/20`}
                  >
                    {isPassed ? <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 mr-2 text-white" /> : <Lock className="w-5 h-5 md:w-6 md:h-6 mr-2 text-yellow-300" />}
-                   {isPassed ? `Kuis ${QUIZ_TITLES[quizPage] || `Bab (Hal. ${quizPage})`} Selesai` : `Mulai Kuis ${QUIZ_TITLES[quizPage] || `Bab (Hal. ${quizPage})`}`}
+                   {isPassed ? `Kuis ${QZT[quizPage] || `Bab (Hal. ${quizPage})`} Selesai` : `Mulai Kuis ${QZT[quizPage] || `Bab (Hal. ${quizPage})`}`}
                  </Button>
                );
             })()}
@@ -580,7 +583,7 @@ export default function Read() {
         <QuizModal 
           isOpen={activeQuizPage !== null} 
           onClose={() => setActiveQuizPage(null)} 
-          questions={activeQuizPage ? QUIZ_DATABASE[activeQuizPage] : []} 
+          questions={activeQuizPage ? QZ[activeQuizPage] : []} 
           onPass={(score, total) => activeQuizPage && handlePassQuiz(activeQuizPage, score, total)}
           pageId={activeQuizPage || 0}
         />
