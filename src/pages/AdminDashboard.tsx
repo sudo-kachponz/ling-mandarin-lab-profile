@@ -41,6 +41,8 @@ type Order = {
   createdAt: string;
 };
 
+type LeaderRow = { rank: number; name: string; score: number; total: number; quizzes: number };
+
 const formatPrice = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
@@ -84,6 +86,7 @@ export default function AdminDashboard() {
   const [authed, setAuthed] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [today, setToday] = useState({ qris: 0, bca: 0, qrisCount: 0, bcaCount: 0 });
+  const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([]);
   const [fetching, setFetching] = useState(false);
   const [search, setSearch] = useState('');
   const [busyRef, setBusyRef] = useState<string | null>(null);
@@ -156,7 +159,7 @@ export default function AdminDashboard() {
         // Server may return non-JSON on a crash (e.g. missing env) — read text
         // first so the real message shows instead of "Unexpected token".
         const raw = await res.text();
-        let data: { error?: string; orders?: Order[]; today?: typeof today } = {};
+        let data: { error?: string; orders?: Order[]; today?: typeof today; leaderboard?: LeaderRow[] } = {};
         try {
           data = raw ? JSON.parse(raw) : {};
         } catch {
@@ -170,6 +173,7 @@ export default function AdminDashboard() {
         if (!res.ok) throw new Error(data.error || 'Gagal memuat data');
         setOrders(data.orders || []);
         if (data.today) setToday(data.today);
+        setLeaderboard(data.leaderboard || []);
         setAuthed(true);
         sessionStorage.setItem('admin_dash', JSON.stringify({ u, p }));
       } catch (e) {
@@ -316,6 +320,41 @@ export default function AdminDashboard() {
             <p className="text-2xl font-extrabold">{formatPrice(today.qris + today.bca)}</p>
             <p className="text-xs text-white/80">{today.qrisCount + today.bcaCount} pesanan disetujui</p>
           </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-soft p-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-[#6A2B2B]">🏆 Leaderboard Kuis — Top Users</h2>
+            <span className="text-xs text-muted-foreground">{leaderboard.length} peserta</span>
+          </div>
+          {leaderboard.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Belum ada yang mengerjakan kuis. Skor akan muncul di sini begitu pembeli menyelesaikan kuis di reader.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-muted-foreground border-b">
+                    <th className="py-2 pr-3 font-semibold">#</th>
+                    <th className="py-2 pr-3 font-semibold">Nama</th>
+                    <th className="py-2 pr-3 font-semibold text-right">Skor</th>
+                    <th className="py-2 pr-3 font-semibold text-right">Benar</th>
+                    <th className="py-2 font-semibold text-right">Kuis</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((r) => (
+                    <tr key={`${r.rank}-${r.name}`} className="border-b last:border-0">
+                      <td className="py-2 pr-3 font-bold text-[#6A2B2B]">{r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank - 1] : r.rank}</td>
+                      <td className="py-2 pr-3">{r.name}</td>
+                      <td className="py-2 pr-3 text-right font-bold">{r.score}</td>
+                      <td className="py-2 pr-3 text-right text-muted-foreground">{r.score}/{r.total}</td>
+                      <td className="py-2 text-right text-muted-foreground">{r.quizzes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-soft p-5 mb-6">
