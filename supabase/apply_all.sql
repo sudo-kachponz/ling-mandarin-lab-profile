@@ -133,7 +133,24 @@ CREATE UNIQUE INDEX IF NOT EXISTS orders_access_token_uniq
   ON public.orders (access_token)
   WHERE access_token IS NOT NULL;
 
--- 8. Seed / Update default product title -----------------------------------
+-- 8. Leaderboard: best quiz score per buyer per quiz page -------------------
+CREATE TABLE IF NOT EXISTS public.quiz_results (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_ref text NOT NULL,
+  buyer_name text,
+  slug text NOT NULL,
+  page_id integer NOT NULL,
+  score integer NOT NULL DEFAULT 0,
+  total integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (order_ref, slug, page_id)
+);
+CREATE INDEX IF NOT EXISTS quiz_results_slug_idx ON public.quiz_results (slug);
+CREATE INDEX IF NOT EXISTS quiz_results_order_idx ON public.quiz_results (order_ref);
+ALTER TABLE public.quiz_results ENABLE ROW LEVEL SECURITY;
+
+-- 9. Seed / Update default product title -----------------------------------
 UPDATE public.products
 SET title = 'E-Book Ling Chinese Lab Volume I'
 WHERE slug IN ('test-katalog', 'rahasia-huruf-mandarin-vol-1') OR title ILIKE '%Mandarin%' OR title ILIKE '%Uji%';
