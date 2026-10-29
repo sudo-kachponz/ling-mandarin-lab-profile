@@ -282,6 +282,10 @@ const QuizLeaderboardSection = () => {
           lead={`Pembaca e-book ${activeBook.book} yang paling rajin & cepat mengerjakan kuis. Makin banyak jawaban benar dan makin cepat, makin jauh pandamu memanjat bambu.`}
         />
 
+        <p className="mx-auto mt-4 w-fit rounded-full border border-maroon/25 bg-maroon/5 px-4 py-1.5 text-center text-sm font-bold text-maroon">
+          🎍 Balapan dimulai 1 November 2026
+        </p>
+
         {/* Pilih papan per buku */}
         <div className="mt-6 flex justify-center">
           <div className="inline-flex rounded-full border border-border bg-card p-1 shadow-soft">
@@ -505,7 +509,7 @@ const QuizLeaderboardSection = () => {
 
           <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl bg-secondary/60 p-4 text-center sm:flex-row sm:text-left">
             <p className="text-sm text-muted-foreground">
-              Nama disamarkan. Poin dari jawaban benar; peringkat sama → yang lebih cepat per soal menang.
+              Poin dari jawaban benar; peringkat sama → yang lebih cepat per soal menang.
             </p>
             <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
               {phase === "done" && !reduced && (

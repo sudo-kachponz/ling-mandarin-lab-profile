@@ -196,19 +196,31 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     const { data: quizRows } = await supabase
       .from('quiz_results')
       .select('order_ref, buyer_name, score, total, duration_seconds');
-    const byBuyer = new Map<string, { name: string | null; score: number; total: number; quizzes: number; totalDuration: number; timedQuizzes: number }>();
+    const byBuyer = new Map<string, { orderRef: string; name: string | null; score: number; total: number; quizzes: number; totalDuration: number; timedQuizzes: number }>();
     for (const r of quizRows || []) {
-      const cur = byBuyer.get(r.order_ref) || { name: r.buyer_name, score: 0, total: 0, quizzes: 0, totalDuration: 0, timedQuizzes: 0 };
+      const cur = byBuyer.get(r.order_ref) || { orderRef: r.order_ref, name: r.buyer_name, score: 0, total: 0, quizzes: 0, totalDuration: 0, timedQuizzes: 0 };
       cur.score += r.score || 0;
       cur.total += r.total || 0;
       cur.quizzes += 1;
       if (r.duration_seconds) { cur.totalDuration += r.duration_seconds; cur.timedQuizzes += 1; }
       byBuyer.set(r.order_ref, cur);
     }
+    // WhatsApp number per order_ref — so admin can message the winner from the panel.
+    const refs = [...byBuyer.keys()];
+    const phoneByRef = new Map<string, string | null>();
+    if (refs.length) {
+      const { data: phoneRows } = await supabase
+        .from('orders')
+        .select('order_ref, buyer_whatsapp')
+        .in('order_ref', refs);
+      for (const p of phoneRows || []) phoneByRef.set(p.order_ref, p.buyer_whatsapp);
+    }
+    const avgSecLB = (e: { totalDuration: number; total: number; timedQuizzes: number }) =>
+      e.timedQuizzes > 0 && e.total > 0 ? e.totalDuration / e.total : Infinity;
     const leaderboard = [...byBuyer.values()]
-      .sort((a, b) => b.score - a.score || b.quizzes - a.quizzes)
+      .sort((a, b) => b.score - a.score || avgSecLB(a) - avgSecLB(b) || b.quizzes - a.quizzes)
       .slice(0, 50)
-      .map((e, i) => ({ rank: i + 1, name: e.name || 'Anonim', score: e.score, total: e.total, quizzes: e.quizzes, avgSecondsPerQuestion: e.timedQuizzes > 0 ? Math.round(e.totalDuration / e.total) : null }));
+      .map((e, i) => ({ rank: i + 1, name: e.name || 'Anonim', whatsapp: phoneByRef.get(e.orderRef) ?? null, score: e.score, total: e.total, quizzes: e.quizzes, avgSecondsPerQuestion: e.timedQuizzes > 0 && e.total > 0 ? Math.round(e.totalDuration / e.total) : null }));
 
     return res.status(200).json({ orders: result, today, leaderboard });
   } catch (error) {

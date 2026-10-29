@@ -41,7 +41,18 @@ type Order = {
   createdAt: string;
 };
 
-type LeaderRow = { rank: number; name: string; score: number; total: number; quizzes: number; avgSecondsPerQuestion: number | null };
+type LeaderRow = { rank: number; name: string; whatsapp: string | null; score: number; total: number; quizzes: number; avgSecondsPerQuestion: number | null };
+
+// WA copy untuk menghubungi pemenang Balapan Bambu. Nominal saldo diisi admin
+// sebelum kirim (placeholder sengaja, biar bisa beda per periode/hadiah).
+function winnerMessage(name: string, rank: number) {
+  return (
+    `Halo ${name}! 🎉🎍\n\n` +
+    `Selamat! Kamu juara ke-${rank} Balapan Bambu — leaderboard kuis e-book Rahasia Huruf Mandarin di Ling Chinese Lab.\n\n` +
+    `Sebagai pemenang, kamu berhak mendapatkan saldo senilai Rp [ISI NOMINAL].\n\n` +
+    `Balas pesan ini untuk klaim hadiahmu ya. Terima kasih sudah rajin belajar! 🐼`
+  );
+}
 
 const formatPrice = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
@@ -339,7 +350,8 @@ export default function AdminDashboard() {
                     <th className="py-2 pr-3 font-semibold text-right">Skor</th>
                     <th className="py-2 pr-3 font-semibold text-right">Benar</th>
                     <th className="py-2 pr-3 font-semibold text-right">Kuis</th>
-                    <th className="py-2 font-semibold text-right">Rata-rata/Soal</th>
+                    <th className="py-2 pr-3 font-semibold text-right">Rata-rata/Soal</th>
+                    <th className="py-2 font-semibold text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,7 +362,21 @@ export default function AdminDashboard() {
                       <td className="py-2 pr-3 text-right font-bold">{r.score}</td>
                       <td className="py-2 pr-3 text-right text-muted-foreground">{r.score}/{r.total}</td>
                       <td className="py-2 pr-3 text-right text-muted-foreground">{r.quizzes}</td>
-                      <td className="py-2 text-right text-muted-foreground">{r.avgSecondsPerQuestion != null ? `${r.avgSecondsPerQuestion}s` : '-'}</td>
+                      <td className="py-2 pr-3 text-right text-muted-foreground">{r.avgSecondsPerQuestion != null ? `${r.avgSecondsPerQuestion}s` : '-'}</td>
+                      <td className="py-2 text-right">
+                        {r.whatsapp ? (
+                          <a
+                            href={`https://wa.me/${waPhone(r.whatsapp)}?text=${encodeURIComponent(winnerMessage(r.name, r.rank))}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-full bg-green-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-green-700"
+                          >
+                            WA
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

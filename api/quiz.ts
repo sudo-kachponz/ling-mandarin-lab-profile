@@ -11,13 +11,6 @@ import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
  * path if it ever needs to be tamper-proof.
  */
 
-function maskName(name: string | null): string {
-  const n = (name || 'Anonim').trim();
-  if (n.length <= 2) return n[0] + '*';
-  const keep = Math.ceil(n.length / 2);
-  return n.slice(0, keep) + '*'.repeat(Math.min(3, n.length - keep));
-}
-
 async function submit(req: VercelRequest, res: VercelResponse) {
   const { token, slug, pageId, score, total, durationSeconds } = req.body || {};
   if (!token || !slug || pageId == null) {
@@ -101,7 +94,7 @@ async function leaderboard(req: VercelRequest, res: VercelResponse) {
     .slice(0, limit)
     .map((e, i) => ({
       rank: i + 1,
-      name: maskName(e.buyerName),
+      name: e.buyerName || 'Anonim',
       score: e.score,
       total: e.total,
       quizzes: e.quizzes,
