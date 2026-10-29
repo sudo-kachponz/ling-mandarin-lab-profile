@@ -280,13 +280,10 @@ const QuizLeaderboardSection = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           char="竹"
+          className="max-w-3xl"
           title="Balapan Bambu"
-          lead={`Pembaca e-book ${activeBook.book} yang paling rajin & cepat mengerjakan kuis. Makin banyak jawaban benar dan makin cepat, makin jauh pandamu memanjat bambu.`}
+          lead="Papan juara pembaca e-book Rahasia Huruf Mandarin — rajin & cepat mengerjakan kuis, pandamu memanjat bambu paling tinggi."
         />
-
-        <p className="mx-auto mt-4 w-fit rounded-full border border-maroon/25 bg-maroon/5 px-4 py-1.5 text-center text-sm font-bold text-maroon">
-          🎍 Balapan dimulai 1 November 2026
-        </p>
 
         {/* Pilih papan per buku */}
         <div className="mt-6 flex justify-center">
@@ -309,6 +306,9 @@ const QuizLeaderboardSection = () => {
         </div>
 
         <div className="reveal mx-auto mt-8 max-w-4xl rounded-[2rem] border border-border/80 bg-card p-5 shadow-soft sm:p-8">
+          <p className="mx-auto mb-5 w-fit rounded-full border border-maroon/25 bg-maroon/5 px-4 py-1.5 text-center text-sm font-bold text-maroon">
+            🎍 Balapan dimulai 1 November 2026
+          </p>
           {/* Banner buku: cover + bendera supaya jelas papan buku yang mana */}
           <div className="mb-6 flex items-center justify-center gap-3 border-b border-border pb-5">
             <img src={activeBook.cover} alt={activeBook.book} className="h-16 w-auto rounded-md shadow-md ring-1 ring-black/10 sm:h-20" />
@@ -523,7 +523,7 @@ const QuizLeaderboardSection = () => {
 
           <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl bg-secondary/60 p-4 text-center sm:flex-row sm:text-left">
             <p className="text-sm text-muted-foreground">
-              Poin dari jawaban benar; peringkat sama → yang lebih cepat per soal menang.
+              <strong className="text-ink">Objektif balapan:</strong> peringkat dihitung dari jumlah jawaban benar di seluruh kuis e-book; bila seri, pemenang ditentukan dari rata-rata waktu tercepat per soal. Skor diambil dari nilai terbaik tiap kuis.
             </p>
             <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
               {phase === "done" && !reduced && (
