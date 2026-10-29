@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { RotateCcw } from "lucide-react";
 import SectionHeading from "@/components/SectionHeading";
 import { cn } from "@/lib/utils";
+import flagChina from "@/assets/Flag/china.svg";
+import flagTaiwan from "@/assets/Flag/taiwan.svg";
 
 /**
  * Leaderboard publik "Balapan Bambu" — memakai endpoint yang SAMA dengan
@@ -38,8 +40,8 @@ const PANDA = "/panda-racer.webp";
 
 // Satu papan per buku. Mandarin (Simplified) lebih dulu, lalu Taiwan (Tradisional).
 const BOOKS = [
-  { key: "simplified", slug: "test-ebook-qris", tab: "Mandarin", book: "Rahasia Huruf Mandarin" },
-  { key: "traditional", slug: "rahasia-huruf-mandarin-tw", tab: "Taiwan", book: "Rahasia Huruf Mandarin — Tradisional (Taiwan)" },
+  { key: "simplified", slug: "test-ebook-qris", tab: "Mandarin", book: "Rahasia Huruf Mandarin", flag: flagChina, cover: "/ebook-cover.webp" },
+  { key: "traditional", slug: "rahasia-huruf-mandarin-tw", tab: "Taiwan", book: "Rahasia Huruf Mandarin — Tradisional (Taiwan)", flag: flagTaiwan, cover: "/cover-tw.webp" },
 ] as const;
 
 // 冠军 / 亚军 / 季军 — sekalian belajar kosakata juara 1–3.
@@ -274,7 +276,7 @@ const QuizLeaderboardSection = () => {
   if (isError) return null;
 
   return (
-    <section id="leaderboard" className="section relative overflow-hidden">
+    <section id="leaderboard" className="section relative overflow-hidden !pt-6 md:!pt-10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           char="竹"
@@ -295,10 +297,11 @@ const QuizLeaderboardSection = () => {
                 type="button"
                 onClick={() => setActiveIdx(i)}
                 className={cn(
-                  "rounded-full px-4 py-2 text-sm font-bold transition-colors sm:px-6",
+                  "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors sm:px-6",
                   i === activeIdx ? "bg-maroon text-white" : "text-muted-foreground hover:text-maroon"
                 )}
               >
+                <img src={b.flag} alt="" className="h-4 w-6 rounded-[2px] object-cover" />
                 {b.tab}
               </button>
             ))}
@@ -306,6 +309,17 @@ const QuizLeaderboardSection = () => {
         </div>
 
         <div className="reveal mx-auto mt-8 max-w-4xl rounded-[2rem] border border-border/80 bg-card p-5 shadow-soft sm:p-8">
+          {/* Banner buku: cover + bendera supaya jelas papan buku yang mana */}
+          <div className="mb-6 flex items-center justify-center gap-3 border-b border-border pb-5">
+            <img src={activeBook.cover} alt={activeBook.book} className="h-16 w-auto rounded-md shadow-md ring-1 ring-black/10 sm:h-20" />
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <img src={activeBook.flag} alt="" className="h-4 w-6 rounded-[2px] object-cover" />
+                <span className="text-sm font-bold text-ink sm:text-base">E-Book {activeBook.tab}</span>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">{activeBook.book}</p>
+            </div>
+          </div>
           {/* Podium tiga besar: potongan batang bambu */}
           <div className="mx-auto grid max-w-xl grid-cols-3 items-end gap-3 sm:gap-6">
             {PODIUM.map((slot) => {
