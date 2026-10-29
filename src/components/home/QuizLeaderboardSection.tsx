@@ -320,6 +320,8 @@ const QuizLeaderboardSection = () => {
               <p className="mt-0.5 text-xs text-muted-foreground">{activeBook.book}</p>
             </div>
           </div>
+          {/* Desktop: podium kiri, lintasan kanan (hemat tempat). HP: tetap tumpuk. */}
+          <div className="lg:grid lg:grid-cols-[22rem_1fr] lg:items-center lg:gap-10">
           {/* Podium tiga besar: potongan batang bambu */}
           <div className="mx-auto grid max-w-xl grid-cols-3 items-end gap-3 sm:gap-6">
             {PODIUM.map((slot) => {
@@ -388,7 +390,7 @@ const QuizLeaderboardSection = () => {
           </div>
 
           {/* Lintasan top 10 */}
-          <div ref={trackRef} className="mt-10 border-t border-border pt-6">
+          <div ref={trackRef} className="mt-10 border-t border-border pt-6 lg:mt-0 lg:border-t-0 lg:pt-0">
             <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h3 className="text-lg font-bold text-ink sm:text-xl">Lintasan 10 besar</h3>
               <span className="text-xs text-muted-foreground sm:text-sm">Garis finis = skor pemimpin</span>
@@ -519,6 +521,8 @@ const QuizLeaderboardSection = () => {
                 </ol>
               </div>
             )}
+          </div>
+
           </div>
 
           <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl bg-secondary/60 p-4 text-center sm:flex-row sm:text-left">
