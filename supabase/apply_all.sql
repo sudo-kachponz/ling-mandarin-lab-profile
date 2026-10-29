@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS public.quiz_results (
   page_id integer NOT NULL,
   score integer NOT NULL DEFAULT 0,
   total integer NOT NULL DEFAULT 0,
+  duration_seconds integer,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (order_ref, slug, page_id)

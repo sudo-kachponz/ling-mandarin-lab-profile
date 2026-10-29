@@ -195,19 +195,20 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
     // Leaderboard: top buyers by total quiz score (full names — admin-only view).
     const { data: quizRows } = await supabase
       .from('quiz_results')
-      .select('order_ref, buyer_name, score, total');
-    const byBuyer = new Map<string, { name: string | null; score: number; total: number; quizzes: number }>();
+      .select('order_ref, buyer_name, score, total, duration_seconds');
+    const byBuyer = new Map<string, { name: string | null; score: number; total: number; quizzes: number; totalDuration: number; timedQuizzes: number }>();
     for (const r of quizRows || []) {
-      const cur = byBuyer.get(r.order_ref) || { name: r.buyer_name, score: 0, total: 0, quizzes: 0 };
+      const cur = byBuyer.get(r.order_ref) || { name: r.buyer_name, score: 0, total: 0, quizzes: 0, totalDuration: 0, timedQuizzes: 0 };
       cur.score += r.score || 0;
       cur.total += r.total || 0;
       cur.quizzes += 1;
+      if (r.duration_seconds) { cur.totalDuration += r.duration_seconds; cur.timedQuizzes += 1; }
       byBuyer.set(r.order_ref, cur);
     }
     const leaderboard = [...byBuyer.values()]
       .sort((a, b) => b.score - a.score || b.quizzes - a.quizzes)
       .slice(0, 50)
-      .map((e, i) => ({ rank: i + 1, name: e.name || 'Anonim', score: e.score, total: e.total, quizzes: e.quizzes }));
+      .map((e, i) => ({ rank: i + 1, name: e.name || 'Anonim', score: e.score, total: e.total, quizzes: e.quizzes, avgSecondsPerQuestion: e.timedQuizzes > 0 ? Math.round(e.totalDuration / e.total) : null }));
 
     return res.status(200).json({ orders: result, today, leaderboard });
   } catch (error) {

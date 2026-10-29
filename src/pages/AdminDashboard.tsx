@@ -41,7 +41,7 @@ type Order = {
   createdAt: string;
 };
 
-type LeaderRow = { rank: number; name: string; score: number; total: number; quizzes: number };
+type LeaderRow = { rank: number; name: string; score: number; total: number; quizzes: number; avgSecondsPerQuestion: number | null };
 
 const formatPrice = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
@@ -338,7 +338,8 @@ export default function AdminDashboard() {
                     <th className="py-2 pr-3 font-semibold">Nama</th>
                     <th className="py-2 pr-3 font-semibold text-right">Skor</th>
                     <th className="py-2 pr-3 font-semibold text-right">Benar</th>
-                    <th className="py-2 font-semibold text-right">Kuis</th>
+                    <th className="py-2 pr-3 font-semibold text-right">Kuis</th>
+                    <th className="py-2 font-semibold text-right">Rata-rata/Soal</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -348,7 +349,8 @@ export default function AdminDashboard() {
                       <td className="py-2 pr-3">{r.name}</td>
                       <td className="py-2 pr-3 text-right font-bold">{r.score}</td>
                       <td className="py-2 pr-3 text-right text-muted-foreground">{r.score}/{r.total}</td>
-                      <td className="py-2 text-right text-muted-foreground">{r.quizzes}</td>
+                      <td className="py-2 pr-3 text-right text-muted-foreground">{r.quizzes}</td>
+                      <td className="py-2 text-right text-muted-foreground">{r.avgSecondsPerQuestion != null ? `${r.avgSecondsPerQuestion}s` : '-'}</td>
                     </tr>
                   ))}
                 </tbody>

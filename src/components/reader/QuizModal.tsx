@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, CheckCircle2, XCircle, Trophy, RefreshCcw, ArrowRight } from 'lucide-react';
 
@@ -396,7 +396,7 @@ interface QuizModalProps {
   isOpen: boolean;
   onClose: () => void;
   questions: Question[];
-  onPass: (score: number, total: number) => void;
+  onPass: (score: number, total: number, durationSeconds: number) => void;
   pageId: number;
 }
 
@@ -407,6 +407,10 @@ export default function QuizModal({ isOpen, onClose, questions, onPass, pageId }
   const [score, setScore] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const startedAt = useRef(Date.now());
+
+  // Reset timer when modal opens
+  useEffect(() => { if (isOpen) startedAt.current = Date.now(); }, [isOpen]);
 
   if (!isOpen || !questions || questions.length === 0) return null;
 
@@ -446,11 +450,14 @@ export default function QuizModal({ isOpen, onClose, questions, onPass, pageId }
     setIsAnswerRevealed(false);
     setIsFinished(false);
     setUserAnswers({});
+    startedAt.current = Date.now();
   };
+
+  const durationSeconds = Math.round((Date.now() - startedAt.current) / 1000);
 
   const handleFinish = () => {
     if (isPassed) {
-      onPass(score, questions.length);
+      onPass(score, questions.length, durationSeconds);
       handleReset(); // reset for next time they open it manually
     } else {
       handleReset();
@@ -478,8 +485,11 @@ export default function QuizModal({ isOpen, onClose, questions, onPass, pageId }
                 <h3 className="text-2xl font-bold text-foreground mb-2">
                   Kuis Selesai!
                 </h3>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-2">
                   Skor Anda: <span className="font-bold text-xl text-primary">{score} / {questions.length}</span>
+                </p>
+                <p className="text-muted-foreground text-sm mb-6">
+                  Waktu: {Math.floor(durationSeconds / 60)}m {durationSeconds % 60}s (rata-rata {Math.round(durationSeconds / questions.length)}s/soal)
                 </p>
                 <div className="flex justify-center">
                   <Button onClick={handleFinish} className="w-full max-w-xs bg-primary hover:bg-primary/90 text-primary-foreground text-base py-6 rounded-xl">

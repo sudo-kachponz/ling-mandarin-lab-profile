@@ -16,6 +16,7 @@ import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import AdminVerify from "./pages/AdminVerify";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminPronunciation from "./pages/AdminPronunciation";
 import Faq from "./pages/Faq";
 import { useScrollReveal } from "./hooks/useScrollReveal";
 import ScrollPanda from "./components/ScrollPanda";
@@ -42,6 +43,7 @@ const App = () => {
             <Route path="/library" element={<Library />} />
             <Route path="/admin/verify" element={<AdminVerify />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/pronunciation" element={<AdminPronunciation />} />
             <Route path="/faq" element={<Faq />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
