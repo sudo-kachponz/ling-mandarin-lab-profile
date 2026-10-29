@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/home/HeroSection";
+import QuizLeaderboardSection from "@/components/home/QuizLeaderboardSection";
 import TikTokSection from "@/components/home/TikTokSection";
 import ProgramsSection from "@/components/home/ProgramsSection";
 import TeachersPreview from "@/components/home/TeachersPreview";
@@ -13,6 +14,7 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
+        <QuizLeaderboardSection />
         <TikTokSection />
         <ProgramsSection />
         <TeachersPreview />

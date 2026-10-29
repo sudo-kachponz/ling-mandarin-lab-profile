@@ -92,8 +92,12 @@ async function leaderboard(req: VercelRequest, res: VercelResponse) {
     byBuyer.set(r.order_ref, cur);
   }
 
+  // Rank by correct answers first, then by speed (faster avg per question wins),
+  // then by quizzes done. Untimed entries sort last on the speed tiebreak.
+  const avgSec = (e: { totalDuration: number; total: number; timedQuizzes: number }) =>
+    e.timedQuizzes > 0 && e.total > 0 ? e.totalDuration / e.total : Infinity;
   const ranking = [...byBuyer.values()]
-    .sort((a, b) => b.score - a.score || b.quizzes - a.quizzes)
+    .sort((a, b) => b.score - a.score || avgSec(a) - avgSec(b) || b.quizzes - a.quizzes)
     .slice(0, limit)
     .map((e, i) => ({
       rank: i + 1,
@@ -101,7 +105,7 @@ async function leaderboard(req: VercelRequest, res: VercelResponse) {
       score: e.score,
       total: e.total,
       quizzes: e.quizzes,
-      avgSecondsPerQuestion: e.timedQuizzes > 0 ? Math.round(e.totalDuration / e.total) : null,
+      avgSecondsPerQuestion: e.timedQuizzes > 0 && e.total > 0 ? Math.round(e.totalDuration / e.total) : null,
     }));
 
   return res.status(200).json({ leaderboard: ranking });

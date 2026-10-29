@@ -310,3 +310,213 @@
     animation: none !important;
   }
 }
+
+@layer components {
+  /* ——— Balapan Bambu (leaderboard publik) ——— */
+  /* Lintasan kosong: batang bambu pucat dengan ruas */
+  .bamboo-lane {
+    border-radius: 9999px;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 54px, hsl(85 20% 62% / 0.35) 54px 56px),
+      hsl(70 22% 90%);
+    box-shadow: inset 0 1px 2px rgba(80, 90, 50, 0.12);
+  }
+  /* Bagian yang sudah dipanjat: bambu hijau beruas */
+  .bamboo-fill {
+    border-radius: 9999px;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 54px, rgba(52, 70, 30, 0.45) 54px 56px, rgba(255, 255, 255, 0.25) 56px 57px),
+      linear-gradient(180deg, #BFD195 0%, #8EAA66 48%, #6C8A4B 100%);
+    will-change: clip-path;
+  }
+  /* Garis start putus-putus */
+  .bamboo-start {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    left: 1rem;
+    width: 2px;
+    background: repeating-linear-gradient(180deg, hsl(var(--maroon) / 0.45) 0 3px, transparent 3px 6px);
+  }
+  /* Daun bambu kecil di atas batang — bergoyang saat dilewati panda */
+  .bamboo-leaf {
+    position: absolute;
+    top: -9px;
+    width: 14px;
+    height: 7px;
+    border-radius: 0 100% 0 100%;
+    background: linear-gradient(135deg, #A9C27C, #6C8A4B);
+    transform-origin: 0% 100%;
+    transform: rotate(-24deg);
+  }
+  /* Garis finis kotak-kotak marun di ujung kanan */
+  .bamboo-finish {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    right: 0;
+    width: 8px;
+    border-radius: 2px;
+    background: repeating-conic-gradient(hsl(var(--maroon)) 0 25%, hsl(var(--paper)) 0 50%) 0 0 / 8px 8px;
+    opacity: 0.8;
+  }
+  /* Potongan batang bambu untuk podium */
+  .bamboo-stump {
+    position: relative;
+    background:
+      linear-gradient(90deg, rgba(40, 55, 25, 0.28) 0%, transparent 18%, rgba(255, 255, 255, 0.22) 38%, transparent 60%, rgba(40, 55, 25, 0.3) 100%),
+      linear-gradient(180deg, #A3BD7A 0%, #7E9C58 100%);
+  }
+  .bamboo-stump::before {
+    /* ruas di tengah batang */
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 38%;
+    height: 3px;
+    background: rgba(52, 70, 30, 0.4);
+  }
+  .bamboo-stump::after {
+    /* penampang potongan di atas */
+    content: "";
+    position: absolute;
+    inset-inline: 6%;
+    top: -5px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, #EEE6C8 0 45%, #C9D7A4 46% 70%, #8EAA66 71%);
+  }
+}
+
+/* react-phone-number-input: ikut gaya field */
+.wa-phone-input {
+  --PhoneInput-color--focus: hsl(var(--maroon));
+  gap: 0.625rem;
+}
+.wa-phone-input .PhoneInputInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: hsl(var(--foreground));
+  font-size: 1rem;
+}
+.wa-phone-input .PhoneInputInput::placeholder {
+  color: hsl(var(--muted-foreground) / 0.7);
+}
+.wa-phone-input .PhoneInputCountry {
+  margin-right: 0.5rem;
+  padding-right: 0.5rem;
+  border-right: 1px solid hsl(var(--border));
+}
+.wa-phone-input .PhoneInputCountryIcon {
+  box-shadow: 0 0 0 1px hsl(var(--border));
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+@layer utilities {
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-lift {
+    box-shadow: var(--shadow-lift);
+  }
+
+  .animate-chat-wave {
+    animation: chat-wave 6s ease-in-out infinite;
+  }
+
+  .caret-blink {
+    animation: caret-blink 1s steps(1) infinite;
+  }
+
+  /* Satu-satunya entrance: hero saat halaman dibuka */
+  .rise {
+    animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .rise-1 { animation-delay: 60ms; }
+  .rise-2 { animation-delay: 140ms; }
+  .rise-3 { animation-delay: 220ms; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes chat-wave {
+    0%, 12% { opacity: 1; transform: translateY(0) scale(1); }
+    35% { opacity: 0.9; transform: translateY(-8px) scale(1.02); }
+    65% { opacity: 0.65; transform: translateY(6px) scale(0.98); }
+    100% { opacity: 0.4; transform: translateY(10px) scale(0.96); }
+  }
+
+  @keyframes caret-blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  /* ——— Motion Balapan Bambu ——— */
+  .panda-run { animation: panda-run 0.22s ease-in-out infinite alternate; }
+  @keyframes panda-run {
+    from { transform: translateY(0) rotate(-7deg); }
+    to { transform: translateY(-30%) rotate(5deg); }
+  }
+  .panda-land { animation: panda-land 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  @keyframes panda-land {
+    0% { transform: translateY(-20%) scale(1, 1); }
+    40% { transform: translateY(0) scale(1.15, 0.82); }
+    100% { transform: translateY(0) scale(1, 1); }
+  }
+  .leaf-rustle { animation: leaf-rustle 0.7s ease-out; }
+  @keyframes leaf-rustle {
+    0% { transform: rotate(-24deg); }
+    25% { transform: rotate(-58deg); }
+    50% { transform: rotate(-8deg); }
+    75% { transform: rotate(-34deg); }
+    100% { transform: rotate(-24deg); }
+  }
+  .count-pop { animation: count-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+  @keyframes count-pop {
+    0% { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+    60% { opacity: 1; transform: scale(1.08) rotate(2deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+  }
+  .confetti-bit {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 9px;
+    height: 5px;
+    border-radius: 1.5px;
+    opacity: 0;
+    animation: confetti-burst 1.1s cubic-bezier(0.15, 0.7, 0.3, 1) both;
+  }
+  @keyframes confetti-burst {
+    0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+    55% { opacity: 1; transform: translate(calc(var(--dx) * 0.75), var(--dy)) rotate(calc(var(--r) * 0.6)); }
+    100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 46px)) rotate(var(--r)); }
+  }
+  .podium-jump { animation: podium-jump 0.62s cubic-bezier(0.25, 0.9, 0.35, 1) both; transform-origin: 50% 100%; }
+  @keyframes podium-jump {
+    0% { opacity: 0; transform: translateY(110px) scale(0.55); }
+    45% { opacity: 1; transform: translateY(-30px) scale(1.04, 0.98); }
+    72% { transform: translateY(3px) scale(1.08, 0.88); }
+    100% { opacity: 1; transform: none; }
+  }
+  .medal-pop { animation: medal-pop 0.5s cubic-bezier(0.2, 1.8, 0.4, 1) 0.35s both; }
+  @keyframes medal-pop {
+    0% { opacity: 0; transform: scale(0) rotate(-90deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+  }
+  .podium-label { animation: podium-label 0.4s ease-out 0.25s both; }
+  @keyframes podium-label {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .stump-glow { animation: stump-glow 1.2s ease-out 0.3s; }
+  @keyframes stump-glow {
+    0% { box-shadow: 0 0 0 0 hsl(var(--gold) / 0); }
+    35% { box-shadow: 0 0 0 6px hsl(var(--gold) / 0.55), 0 0 28px 6px hsl(var(--gold) / 0.45); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--gold) / 0); }
+  }
+}
