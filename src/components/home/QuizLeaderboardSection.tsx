@@ -372,12 +372,12 @@ const QuizLeaderboardSection = () => {
                       {slot.pinyin}
                     </span>
                   </div>
-                  <div className="mt-3 min-h-[2.75rem] w-full text-center">
+                  <div className="mt-3 min-h-[2.75rem] w-full min-w-0 overflow-hidden text-center">
                     {isLoading ? (
                       <span className="mx-auto block h-4 w-16 animate-pulse rounded bg-muted" />
                     ) : shown ? (
-                      <div className={cn(animate && "podium-label")}>
-                        <p className="truncate text-[11px] font-bold leading-tight text-ink sm:text-sm">{row.name}</p>
+                      <div className={cn("min-w-0", animate && "podium-label")}>
+                        <p className="overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-bold leading-tight text-ink sm:text-sm">{row.name}</p>
                         <p className="text-[10px] font-semibold text-maroon sm:text-sm">{row.score} poin</p>
                       </div>
                     ) : (
