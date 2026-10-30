@@ -282,7 +282,7 @@ const QuizLeaderboardSection = () => {
           char="竹"
           className="max-w-3xl"
           title="Balapan Bambu"
-          lead="Papan juara pembaca e-book Rahasia Huruf Mandarin — rajin & cepat mengerjakan kuis, pandamu memanjat bambu paling tinggi."
+          lead={<>Yuk, ikutan <em>Bamboo Race</em> untuk buktikan kemampuan Mandarin dalam series e-book Rahasia Huruf Mandarin!{rows.length > 0 && <span className="mt-1 block text-xs text-muted-foreground">Dari {rows.length}+ pembaca aktif</span>}</>}
         />
 
         {/* Pilih papan per buku */}
@@ -298,7 +298,7 @@ const QuizLeaderboardSection = () => {
                   i === activeIdx ? "bg-maroon text-white" : "text-muted-foreground hover:text-maroon"
                 )}
               >
-                <img src={b.flag} alt="" className="h-4 w-6 rounded-[2px] object-cover" />
+                <img src={b.flag} alt="" className="h-5 w-5 rounded-full object-cover" />
                 {b.tab}
               </button>
             ))}
@@ -306,18 +306,20 @@ const QuizLeaderboardSection = () => {
         </div>
 
         <div className="reveal mx-auto mt-8 max-w-6xl rounded-[2rem] border border-border/80 bg-card p-5 shadow-soft sm:p-8">
-          <p className="mx-auto mb-5 w-fit rounded-full border border-maroon/25 bg-maroon/5 px-4 py-1.5 text-center text-sm font-bold text-maroon">
-            🎍 Balapan dimulai 1 November 2026
-          </p>
-          {/* Banner buku: cover + bendera supaya jelas papan buku yang mana */}
-          <div className="mb-6 flex items-center justify-center gap-3 border-b border-border pb-5">
-            <img src={activeBook.cover} alt={activeBook.book} className="h-16 w-auto rounded-md shadow-md ring-1 ring-black/10 sm:h-20" />
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <img src={activeBook.flag} alt="" className="h-4 w-6 rounded-[2px] object-cover" />
-                <span className="text-sm font-bold text-ink sm:text-base">E-Book {activeBook.tab}</span>
+          {/* Banner: tanggal + info buku — desktop kiri-kanan, HP tumpuk */}
+          <div className="mb-6 flex flex-col items-center gap-4 border-b border-border pb-5 sm:flex-row sm:justify-between">
+            <p className="w-fit rounded-full border border-maroon/25 bg-maroon/5 px-4 py-1.5 text-center text-sm font-bold text-maroon">
+              🏁 Balapan dimulai 1 November 2026
+            </p>
+            <div className="flex items-center gap-3">
+              <img src={activeBook.cover} alt={activeBook.book} className="h-14 w-auto rounded-md shadow-md ring-1 ring-black/10 sm:h-16" />
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <img src={activeBook.flag} alt="" className="h-5 w-5 rounded-full object-cover" />
+                  <span className="text-sm font-bold text-ink sm:text-base">E-Book {activeBook.tab}</span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">{activeBook.book}</p>
               </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">{activeBook.book}</p>
             </div>
           </div>
           {/* Desktop: podium kiri, lintasan kanan (hemat tempat). HP: tetap tumpuk. */}
