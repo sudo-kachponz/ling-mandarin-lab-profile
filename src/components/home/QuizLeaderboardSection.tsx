@@ -329,7 +329,7 @@ const QuizLeaderboardSection = () => {
               const shown = !!row && podiumStep >= slot.order;
               const animate = shown && !reduced;
               return (
-                <div key={slot.rank} className="flex flex-col items-center">
+                <div key={slot.rank} className="flex min-w-0 flex-col items-center overflow-hidden">
                   <div className="relative z-10 mb-[-6px]">
                     {/* bayangan panda: kursi menunggu juaranya */}
                     <img
@@ -372,13 +372,13 @@ const QuizLeaderboardSection = () => {
                       {slot.pinyin}
                     </span>
                   </div>
-                  <div className="mt-3 min-h-[2.75rem] text-center">
+                  <div className="mt-3 min-h-[2.75rem] w-full text-center">
                     {isLoading ? (
                       <span className="mx-auto block h-4 w-16 animate-pulse rounded bg-muted" />
                     ) : shown ? (
                       <div className={cn(animate && "podium-label")}>
-                        <p className="truncate text-sm font-bold text-ink sm:text-base">{row.name}</p>
-                        <p className="text-xs font-semibold text-maroon sm:text-sm">{row.score} poin</p>
+                        <p className="truncate text-[11px] font-bold leading-tight text-ink sm:text-sm">{row.name}</p>
+                        <p className="text-[10px] font-semibold text-maroon sm:text-sm">{row.score} poin</p>
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">{row ? "Menunggu juara…" : "Kursi kosong"}</p>
