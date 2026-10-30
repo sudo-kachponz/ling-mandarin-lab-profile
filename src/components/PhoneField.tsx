@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PhoneInput, { getCountryCallingCode } from 'react-phone-number-input';
 import type { Country } from 'react-phone-number-input';
+import flags from 'react-phone-number-input/flags';
 import 'react-phone-number-input/style.css';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -86,6 +87,7 @@ export default function PhoneField({ value, onChange, ...rest }: PhoneFieldProps
       international
       defaultCountry="ID"
       countrySelectComponent={CountrySelect}
+      flags={flags}
       value={value}
       onChange={(v) => onChange(v || '')}
       {...rest}
