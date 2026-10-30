@@ -305,7 +305,7 @@ const QuizLeaderboardSection = () => {
           </div>
         </div>
 
-        <div className="reveal mx-auto mt-8 max-w-4xl rounded-[2rem] border border-border/80 bg-card p-5 shadow-soft sm:p-8">
+        <div className="reveal mx-auto mt-8 max-w-6xl rounded-[2rem] border border-border/80 bg-card p-5 shadow-soft sm:p-8">
           <p className="mx-auto mb-5 w-fit rounded-full border border-maroon/25 bg-maroon/5 px-4 py-1.5 text-center text-sm font-bold text-maroon">
             🎍 Balapan dimulai 1 November 2026
           </p>

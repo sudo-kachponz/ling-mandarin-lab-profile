@@ -190,7 +190,7 @@ const HeroSection = () => {
             {/* E-book promo */}
             <button
               onClick={() => navigate("/store")}
-              className="group flex w-full max-w-2xl items-center gap-4 rounded-[1.5rem] bg-maroon p-4 text-left text-white shadow-lift transition-colors hover:bg-maroon-deep sm:gap-5 sm:p-5"
+              className="group flex w-full items-center gap-4 rounded-[1.5rem] bg-maroon p-4 text-left text-white shadow-lift transition-colors hover:bg-maroon-deep sm:gap-5 sm:p-5"
             >
               {/* Mobile: cover tunggal yang ringkas */}
               <img
