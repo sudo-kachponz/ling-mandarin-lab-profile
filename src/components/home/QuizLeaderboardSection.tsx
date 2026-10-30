@@ -377,7 +377,7 @@ const QuizLeaderboardSection = () => {
                       <span className="mx-auto block h-4 w-16 animate-pulse rounded bg-muted" />
                     ) : shown ? (
                       <div className={cn("min-w-0", animate && "podium-label")}>
-                        <p className="overflow-hidden text-ellipsis whitespace-nowrap text-[11px] font-bold leading-tight text-ink sm:text-sm">{row.name}</p>
+                        <p className="line-clamp-2 text-[11px] font-bold leading-tight text-ink sm:text-sm">{row.name}</p>
                         <p className="text-[10px] font-semibold text-maroon sm:text-sm">{row.score} poin</p>
                       </div>
                     ) : (
