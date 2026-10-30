@@ -101,7 +101,18 @@ async function leaderboard(req: VercelRequest, res: VercelResponse) {
       avgSecondsPerQuestion: e.timedQuizzes > 0 && e.total > 0 ? Math.round(e.totalDuration / e.total) : null,
     }));
 
-  return res.status(200).json({ leaderboard: ranking });
+  // Count total paid readers for this ebook (including those who haven't taken any quiz)
+  let totalReaders = byBuyer.size;
+  if (slug) {
+    const { count } = await supabase
+      .from('orders')
+      .select('order_ref', { count: 'exact', head: true })
+      .eq('status', 'paid')
+      .eq('product_id', (await supabase.from('products').select('id').eq('slug', slug).single()).data?.id ?? '');
+    if (count != null && count > totalReaders) totalReaders = count;
+  }
+
+  return res.status(200).json({ leaderboard: ranking, totalReaders });
 }
 
 export default withJsonErrors(async function handler(req: VercelRequest, res: VercelResponse) {

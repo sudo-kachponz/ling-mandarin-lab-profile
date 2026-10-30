@@ -71,11 +71,13 @@ const T = {
 
 const medalFor = (rank: number) => PODIUM.find((p) => p.rank === rank)?.medal;
 
-async function fetchLeaderboard(slug: string): Promise<LeaderRow[]> {
+type LeaderData = { leaderboard: LeaderRow[]; totalReaders: number };
+
+async function fetchLeaderboard(slug: string): Promise<LeaderData> {
   const res = await fetch(`/api/quiz?limit=10&slug=${encodeURIComponent(slug)}`);
   if (!res.ok) throw new Error("leaderboard");
-  const data = (await res.json()) as { leaderboard?: LeaderRow[] };
-  return data.leaderboard ?? [];
+  const data = (await res.json()) as { leaderboard?: LeaderRow[]; totalReaders?: number };
+  return { leaderboard: data.leaderboard ?? [], totalReaders: data.totalReaders ?? 0 };
 }
 
 const prefersReducedMotion = () =>
@@ -152,7 +154,8 @@ const QuizLeaderboardSection = () => {
   const [podiumStep, setPodiumStep] = useState(0);
   const [burst, setBurst] = useState(0); // >0 = tampilkan confetti (nilai = key untuk replay)
 
-  const rows = (data ?? []).slice(0, 10);
+  const rows = (data?.leaderboard ?? []).slice(0, 10);
+  const totalReaders = data?.totalReaders ?? 0;
   const leaderScore = Math.max(1, ...rows.map((r) => r.score));
   const byRank = new Map(rows.map((r) => [r.rank, r]));
   const targetPct = (r: LeaderRow) => Math.max(4, (r.score / leaderScore) * 100);
@@ -282,7 +285,7 @@ const QuizLeaderboardSection = () => {
           char="竹"
           className="max-w-3xl"
           title="Balapan Bambu"
-          lead={<>Yuk, ikutan <em>Bamboo Race</em> untuk buktikan kemampuan Mandarin dalam series e-book Rahasia Huruf Mandarin!{rows.length > 0 && <span className="mt-1 block text-xs text-muted-foreground">Dari {rows.length}+ pembaca aktif</span>}</>}
+          lead={<>Yuk, ikutan <em>Bamboo Race</em> untuk buktikan kemampuan Mandarin dalam series e-book Rahasia Huruf Mandarin!{totalReaders > 0 && <span className="mt-1 block text-xs text-muted-foreground">Top {rows.length} dari {totalReaders} pembaca</span>}</>}
         />
 
         {/* Pilih papan per buku */}
