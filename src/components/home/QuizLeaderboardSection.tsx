@@ -32,17 +32,14 @@ type LeaderRow = {
   total: number;
   quizzes: number;
   avgSecondsPerQuestion: number | null;
+  variants: string[];
 };
 
 type Phase = "idle" | "countdown" | "racing" | "podium" | "done";
 
 const PANDA = "/panda-racer.webp";
 
-// Satu papan per buku. Mandarin (Simplified) lebih dulu, lalu Taiwan (Tradisional).
-const BOOKS = [
-  { key: "simplified", slug: "test-ebook-qris", tab: "Mandarin", book: "Rahasia Huruf Mandarin", flag: flagChina, cover: "/ebook-cover.webp" },
-  { key: "traditional", slug: "rahasia-huruf-mandarin-tw", tab: "Taiwan", book: "Rahasia Huruf Mandarin — Tradisional (Taiwan)", flag: flagTaiwan, cover: "/cover-tw.webp" },
-] as const;
+const VARIANT_FLAG: Record<string, string> = { simplified: flagChina, traditional: flagTaiwan };
 
 // 冠军 / 亚军 / 季军 — sekalian belajar kosakata juara 1–3.
 // `order` = urutan loncat ke podium (juara 3 duluan, juara 1 terakhir).
@@ -73,8 +70,8 @@ const medalFor = (rank: number) => PODIUM.find((p) => p.rank === rank)?.medal;
 
 type LeaderData = { leaderboard: LeaderRow[]; totalReaders: number };
 
-async function fetchLeaderboard(slug: string): Promise<LeaderData> {
-  const res = await fetch(`/api/quiz?limit=10&slug=${encodeURIComponent(slug)}`);
+async function fetchLeaderboard(): Promise<LeaderData> {
+  const res = await fetch("/api/quiz?limit=10");
   if (!res.ok) throw new Error("leaderboard");
   const data = (await res.json()) as { leaderboard?: LeaderRow[]; totalReaders?: number };
   return { leaderboard: data.leaderboard ?? [], totalReaders: data.totalReaders ?? 0 };
@@ -138,11 +135,9 @@ const CONFETTI = Array.from({ length: 22 }, (_, i) => ({
 
 const QuizLeaderboardSection = () => {
   const navigate = useNavigate();
-  const [activeIdx, setActiveIdx] = useState(0);
-  const activeBook = BOOKS[activeIdx];
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["quiz-leaderboard-public", activeBook.slug],
-    queryFn: () => fetchLeaderboard(activeBook.slug),
+    queryKey: ["quiz-leaderboard-public"],
+    queryFn: fetchLeaderboard,
     staleTime: 60_000,
     retry: 1,
   });
@@ -177,11 +172,6 @@ const QuizLeaderboardSection = () => {
     setCountStep(0);
     setPhase("idle");
   }, []);
-
-  // Ganti buku → ulang balapan dengan data papan baru.
-  useEffect(() => {
-    reset();
-  }, [activeIdx, reset]);
 
   // Mulai otomatis saat terlihat dan data sudah ada
   useEffect(() => {
@@ -288,43 +278,11 @@ const QuizLeaderboardSection = () => {
           lead={<>Yuk, ikutan <em>Bamboo Race</em> untuk buktikan kemampuan Mandarin dalam series e-book Rahasia Huruf Mandarin!{totalReaders > 0 && <span className="mt-1 block text-xs text-muted-foreground">Top {rows.length} dari {totalReaders} pembaca</span>}</>}
         />
 
-        {/* Pilih papan per buku */}
-        <div className="mt-6 flex justify-center">
-          <div className="inline-flex rounded-full border border-border bg-card p-1 shadow-soft">
-            {BOOKS.map((b, i) => (
-              <button
-                key={b.key}
-                type="button"
-                onClick={() => setActiveIdx(i)}
-                className={cn(
-                  "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors sm:px-6",
-                  i === activeIdx ? "bg-maroon text-white" : "text-muted-foreground hover:text-maroon"
-                )}
-              >
-                <img src={b.flag} alt="" className="h-5 w-5 rounded-full object-cover" />
-                {b.tab}
-              </button>
-            ))}
-          </div>
-        </div>
 
         <div className="reveal mx-auto mt-8 max-w-6xl rounded-[2rem] border border-border/80 bg-card p-5 shadow-soft sm:p-8">
-          {/* Banner: tanggal + info buku — desktop kiri-kanan, HP tumpuk */}
-          <div className="mb-6 flex flex-col items-center gap-4 border-b border-border pb-5 sm:flex-row sm:justify-between">
-            <p className="w-fit rounded-full border border-maroon/25 bg-maroon/5 px-4 py-1.5 text-center text-sm font-bold text-maroon">
-              🏁 Balapan dimulai 1 November 2026
-            </p>
-            <div className="flex items-center gap-3">
-              <img src={activeBook.cover} alt={activeBook.book} className="h-14 w-auto rounded-md shadow-md ring-1 ring-black/10 sm:h-16" />
-              <div className="text-left">
-                <div className="flex items-center gap-2">
-                  <img src={activeBook.flag} alt="" className="h-5 w-5 rounded-full object-cover" />
-                  <span className="text-sm font-bold text-ink sm:text-base">E-Book {activeBook.tab}</span>
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">{activeBook.book}</p>
-              </div>
-            </div>
-          </div>
+          <p className="mx-auto mb-6 w-fit rounded-full border border-maroon/25 bg-maroon/5 px-4 py-1.5 text-center text-sm font-bold text-maroon">
+            🏁 Balapan dimulai 1 November 2026
+          </p>
           {/* Desktop: podium kiri, lintasan kanan (hemat tempat). HP: tetap tumpuk. */}
           <div className="lg:grid lg:grid-cols-[22rem_1fr] lg:items-center lg:gap-10">
           {/* Podium tiga besar: potongan batang bambu */}
@@ -383,6 +341,7 @@ const QuizLeaderboardSection = () => {
                     ) : shown ? (
                       <div className={cn("min-w-0", animate && "podium-label")}>
                         <p className="line-clamp-2 text-[11px] font-bold leading-tight text-ink sm:text-sm">{row.name}</p>
+                        <div className="mt-0.5 flex justify-center gap-1">{row.variants?.map((v) => VARIANT_FLAG[v] ? <img key={v} src={VARIANT_FLAG[v]} alt={v} className="h-3 w-3 rounded-full object-cover" /> : null)}</div>
                         <p className="text-[10px] font-semibold text-maroon sm:text-sm">{row.score} poin</p>
                       </div>
                     ) : (
@@ -415,7 +374,7 @@ const QuizLeaderboardSection = () => {
                   ))}
                 </div>
                 <p className="max-w-sm text-sm text-muted-foreground">
-                  Para panda masih menunggu di garis start. Selesaikan kuis di dalam e-book {activeBook.tab} dan jadilah pembalap pertama.
+                  Para panda masih menunggu di garis start. Selesaikan kuis di dalam e-book dan jadilah pembalap pertama.
                 </p>
               </div>
             ) : (
@@ -450,7 +409,10 @@ const QuizLeaderboardSection = () => {
                         >
                           {r.rank}
                         </span>
-                        <span className="min-w-0 truncate text-sm font-semibold text-ink">{r.name}</span>
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <span className="truncate text-sm font-semibold text-ink">{r.name}</span>
+                          {r.variants?.map((v) => VARIANT_FLAG[v] ? <img key={v} src={VARIANT_FLAG[v]} alt={v} className="h-3.5 w-3.5 shrink-0 rounded-full object-cover" /> : null)}
+                        </span>
 
                         {/* batang bambu + panda */}
                         <div

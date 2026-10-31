@@ -65,28 +65,29 @@ async function submit(req: VercelRequest, res: VercelResponse) {
   return res.status(200).json({ ok: true });
 }
 
+const SLUG_TO_VARIANT: Record<string, string> = {
+  'test-ebook-qris': 'simplified',
+  'rahasia-huruf-mandarin-tw': 'traditional',
+};
+
 async function leaderboard(req: VercelRequest, res: VercelResponse) {
-  const slug = typeof req.query.slug === 'string' ? req.query.slug : null;
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
 
   const supabase = getSupabaseAdmin();
-  let query = supabase.from('quiz_results').select('order_ref, buyer_name, score, total, duration_seconds');
-  if (slug) query = query.eq('slug', slug);
-  const { data, error } = await query;
+  const { data, error } = await supabase.from('quiz_results').select('order_ref, buyer_name, slug, score, total, duration_seconds');
   if (error) return res.status(500).json({ error: 'Gagal memuat leaderboard.' });
 
-  const byBuyer = new Map<string, { buyerName: string | null; score: number; total: number; quizzes: number; totalDuration: number; timedQuizzes: number }>();
+  const byBuyer = new Map<string, { buyerName: string | null; score: number; total: number; quizzes: number; totalDuration: number; timedQuizzes: number; variants: Set<string> }>();
   for (const r of data || []) {
-    const cur = byBuyer.get(r.order_ref) || { buyerName: r.buyer_name, score: 0, total: 0, quizzes: 0, totalDuration: 0, timedQuizzes: 0 };
+    const cur = byBuyer.get(r.order_ref) || { buyerName: r.buyer_name, score: 0, total: 0, quizzes: 0, totalDuration: 0, timedQuizzes: 0, variants: new Set<string>() };
     cur.score += r.score || 0;
     cur.total += r.total || 0;
     cur.quizzes += 1;
+    if (r.slug) cur.variants.add(SLUG_TO_VARIANT[r.slug] || r.slug);
     if (r.duration_seconds) { cur.totalDuration += r.duration_seconds; cur.timedQuizzes += 1; }
     byBuyer.set(r.order_ref, cur);
   }
 
-  // Rank by correct answers first, then by speed (faster avg per question wins),
-  // then by quizzes done. Untimed entries sort last on the speed tiebreak.
   const avgSec = (e: { totalDuration: number; total: number; timedQuizzes: number }) =>
     e.timedQuizzes > 0 && e.total > 0 ? e.totalDuration / e.total : Infinity;
   const ranking = [...byBuyer.values()]
@@ -99,18 +100,11 @@ async function leaderboard(req: VercelRequest, res: VercelResponse) {
       total: e.total,
       quizzes: e.quizzes,
       avgSecondsPerQuestion: e.timedQuizzes > 0 && e.total > 0 ? Math.round(e.totalDuration / e.total) : null,
+      variants: [...e.variants],
     }));
 
-  // Count total paid readers for this ebook (including those who haven't taken any quiz)
-  let totalReaders = byBuyer.size;
-  if (slug) {
-    const { count } = await supabase
-      .from('orders')
-      .select('order_ref', { count: 'exact', head: true })
-      .eq('status', 'paid')
-      .eq('product_id', (await supabase.from('products').select('id').eq('slug', slug).single()).data?.id ?? '');
-    if (count != null && count > totalReaders) totalReaders = count;
-  }
+  const { count } = await supabase.from('orders').select('order_ref', { count: 'exact', head: true }).eq('status', 'paid');
+  const totalReaders = Math.max(byBuyer.size, count ?? 0);
 
   return res.status(200).json({ leaderboard: ranking, totalReaders });
 }
