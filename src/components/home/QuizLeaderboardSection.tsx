@@ -33,6 +33,7 @@ type LeaderRow = {
   quizzes: number;
   avgSecondsPerQuestion: number | null;
   variants: string[];
+  tabSwitches: number;
 };
 
 type Phase = "idle" | "countdown" | "racing" | "podium" | "done";
@@ -480,6 +481,7 @@ const QuizLeaderboardSection = () => {
                           </span>
                           <span className="block text-[11px] text-muted-foreground">
                             {r.quizzes} kuis{r.avgSecondsPerQuestion != null ? ` · ${r.avgSecondsPerQuestion}s/soal` : ""}
+                            {r.tabSwitches > 0 && <span className="ml-1" title={`${r.tabSwitches}× pindah tab saat kuis`}>👀</span>}
                           </span>
                         </span>
                       </li>

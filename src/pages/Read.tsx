@@ -336,7 +336,7 @@ export default function Read() {
     if (viewMode === 'scroll') handlePageChange(currentPageScroll);
   }, [currentPageScroll, viewMode]);
 
-  const handlePassQuiz = (pageId: number, score = 0, total = 0, durationSeconds = 0) => {
+  const handlePassQuiz = (pageId: number, score = 0, total = 0, durationSeconds = 0, tabSwitches = 0) => {
     setPassedQuizzes(prev => {
       if (prev.includes(pageId)) return prev;
       const newP = [...prev, pageId];
@@ -348,7 +348,7 @@ export default function Read() {
       fetch('/api/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: accessTokenParam, slug, pageId, score, total, durationSeconds }),
+        body: JSON.stringify({ token: accessTokenParam, slug, pageId, score, total, durationSeconds, tabSwitches }),
       }).catch(() => {}); // best-effort; never block reading on a leaderboard write
     }
     setActiveQuizPage(null);
@@ -584,7 +584,7 @@ export default function Read() {
           isOpen={activeQuizPage !== null} 
           onClose={() => setActiveQuizPage(null)} 
           questions={activeQuizPage ? QZ[activeQuizPage] : []} 
-          onPass={(score, total, dur) => activeQuizPage && handlePassQuiz(activeQuizPage, score, total, dur)}
+          onPass={(score, total, dur, tabs) => activeQuizPage && handlePassQuiz(activeQuizPage, score, total, dur, tabs)}
           pageId={activeQuizPage || 0}
         />
 

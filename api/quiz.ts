@@ -12,7 +12,7 @@ import { getSupabaseAdmin, withJsonErrors } from './_lib/supabaseAdmin.js';
  */
 
 async function submit(req: VercelRequest, res: VercelResponse) {
-  const { token, slug, pageId, score, total, durationSeconds } = req.body || {};
+  const { token, slug, pageId, score, total, durationSeconds, tabSwitches } = req.body || {};
   if (!token || !slug || pageId == null) {
     return res.status(400).json({ error: 'token, slug, dan pageId wajib diisi.' });
   }
@@ -20,6 +20,7 @@ async function submit(req: VercelRequest, res: VercelResponse) {
   const sc = Math.max(0, Number(score) || 0);
   const tot = Math.max(0, Number(total) || 0);
   const dur = Math.max(0, Math.round(Number(durationSeconds) || 0));
+  const tabs = Math.max(0, Math.round(Number(tabSwitches) || 0));
   if (!Number.isFinite(page) || sc > tot) {
     return res.status(400).json({ error: 'Data skor tidak valid.' });
   }
@@ -52,12 +53,13 @@ async function submit(req: VercelRequest, res: VercelResponse) {
       score: sc,
       total: tot,
       duration_seconds: dur || null,
+      tab_switches: tabs,
     });
     if (error) return res.status(500).json({ error: 'Gagal menyimpan skor.' });
   } else if (sc > (existing.score ?? 0)) {
     const { error } = await supabase
       .from('quiz_results')
-      .update({ score: sc, total: tot, duration_seconds: dur || null, updated_at: new Date().toISOString() })
+      .update({ score: sc, total: tot, duration_seconds: dur || null, tab_switches: tabs, updated_at: new Date().toISOString() })
       .eq('id', existing.id);
     if (error) return res.status(500).json({ error: 'Gagal memperbarui skor.' });
   }
@@ -74,17 +76,18 @@ async function leaderboard(req: VercelRequest, res: VercelResponse) {
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
 
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.from('quiz_results').select('order_ref, buyer_name, slug, score, total, duration_seconds');
+  const { data, error } = await supabase.from('quiz_results').select('order_ref, buyer_name, slug, score, total, duration_seconds, tab_switches');
   if (error) return res.status(500).json({ error: 'Gagal memuat leaderboard.' });
 
-  const byBuyer = new Map<string, { buyerName: string | null; score: number; total: number; quizzes: number; totalDuration: number; timedQuizzes: number; variants: Set<string> }>();
+  const byBuyer = new Map<string, { buyerName: string | null; score: number; total: number; quizzes: number; totalDuration: number; timedQuizzes: number; variants: Set<string>; tabSwitches: number }>();
   for (const r of data || []) {
-    const cur = byBuyer.get(r.order_ref) || { buyerName: r.buyer_name, score: 0, total: 0, quizzes: 0, totalDuration: 0, timedQuizzes: 0, variants: new Set<string>() };
+    const cur = byBuyer.get(r.order_ref) || { buyerName: r.buyer_name, score: 0, total: 0, quizzes: 0, totalDuration: 0, timedQuizzes: 0, variants: new Set<string>(), tabSwitches: 0 };
     cur.score += r.score || 0;
     cur.total += r.total || 0;
     cur.quizzes += 1;
     if (r.slug) cur.variants.add(SLUG_TO_VARIANT[r.slug] || r.slug);
     if (r.duration_seconds) { cur.totalDuration += r.duration_seconds; cur.timedQuizzes += 1; }
+    cur.tabSwitches += r.tab_switches || 0;
     byBuyer.set(r.order_ref, cur);
   }
 
@@ -101,6 +104,7 @@ async function leaderboard(req: VercelRequest, res: VercelResponse) {
       quizzes: e.quizzes,
       avgSecondsPerQuestion: e.timedQuizzes > 0 && e.total > 0 ? Math.round(e.totalDuration / e.total) : null,
       variants: [...e.variants],
+      tabSwitches: e.tabSwitches,
     }));
 
   const { count } = await supabase.from('orders').select('order_ref', { count: 'exact', head: true }).eq('status', 'paid');

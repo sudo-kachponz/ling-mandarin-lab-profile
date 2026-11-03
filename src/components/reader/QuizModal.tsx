@@ -396,7 +396,7 @@ interface QuizModalProps {
   isOpen: boolean;
   onClose: () => void;
   questions: Question[];
-  onPass: (score: number, total: number, durationSeconds: number) => void;
+  onPass: (score: number, total: number, durationSeconds: number, tabSwitches: number) => void;
   pageId: number;
 }
 
@@ -408,9 +408,17 @@ export default function QuizModal({ isOpen, onClose, questions, onPass, pageId }
   const [isFinished, setIsFinished] = useState(false);
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const startedAt = useRef(Date.now());
+  const tabSwitchCount = useRef(0);
 
-  // Reset timer when modal opens
-  useEffect(() => { if (isOpen) startedAt.current = Date.now(); }, [isOpen]);
+  // Reset timer + tab-switch counter when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    startedAt.current = Date.now();
+    tabSwitchCount.current = 0;
+    const handler = () => { if (document.hidden) tabSwitchCount.current++; };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, [isOpen]);
 
   if (!isOpen || !questions || questions.length === 0) return null;
 
@@ -457,7 +465,7 @@ export default function QuizModal({ isOpen, onClose, questions, onPass, pageId }
 
   const handleFinish = () => {
     if (isPassed) {
-      onPass(score, questions.length, durationSeconds);
+      onPass(score, questions.length, durationSeconds, tabSwitchCount.current);
       handleReset(); // reset for next time they open it manually
     } else {
       handleReset();
