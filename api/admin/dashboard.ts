@@ -64,6 +64,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
           method,
           hasProof: body.hasProof === true,
           actor: 'dashboard:' + user,
+          productSlug: body.productSlug || undefined,
         });
         if (!r.ok) {
           const f = r as { status: number; error: string };

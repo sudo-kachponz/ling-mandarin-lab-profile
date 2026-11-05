@@ -86,17 +86,20 @@ export async function createManualPaidOrder(input: {
   actor: string;
   /** Admin optionally attaches a proof image — if so, we return an upload URL. */
   hasProof?: boolean;
+  /** Product slug — defaults to first product if omitted. */
+  productSlug?: string;
 }): Promise<
   | { ok: true; accessUrl: string; alreadyPaid: boolean; uploadUrl?: string }
   | { ok: false; status: number; error: string }
 > {
   const supabase = getSupabaseAdmin();
-  // Single-product store — Store.tsx sells products[0]; mirror that here.
-  const { data: product } = await supabase
-    .from('products')
-    .select('id, slug, title')
-    .limit(1)
-    .maybeSingle();
+  let productQuery = supabase.from('products').select('id, slug, title');
+  if (input.productSlug) {
+    productQuery = productQuery.eq('slug', input.productSlug);
+  } else {
+    productQuery = productQuery.limit(1);
+  }
+  const { data: product } = await productQuery.maybeSingle();
   if (!product) return { ok: false, status: 500, error: 'Produk belum tersedia.' };
 
   const orderRef = `LCL-MP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

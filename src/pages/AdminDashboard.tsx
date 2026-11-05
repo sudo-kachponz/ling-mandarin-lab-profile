@@ -111,6 +111,7 @@ export default function AdminDashboard() {
   const [genPhone, setGenPhone] = useState('');
   const [genAmount, setGenAmount] = useState('');
   const [genMethod, setGenMethod] = useState<'qris' | 'bca'>('qris');
+  const [genSlug, setGenSlug] = useState<'test-ebook-qris' | 'rahasia-huruf-mandarin-tw'>('test-ebook-qris');
   const [genProof, setGenProof] = useState<File | null>(null);
   const [genLink, setGenLink] = useState<string | null>(null);
   const [genBusy, setGenBusy] = useState(false);
@@ -127,7 +128,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/dashboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-user': user, 'x-admin-password': pass },
-        body: JSON.stringify({ action: 'manual_create', buyerName: name, buyerWhatsapp: phone, amount, method: genMethod, hasProof: !!genProof }),
+        body: JSON.stringify({ action: 'manual_create', buyerName: name, buyerWhatsapp: phone, amount, method: genMethod, productSlug: genSlug, hasProof: !!genProof }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal memproses');
@@ -418,6 +419,17 @@ export default function AdminDashboard() {
                     onCheckedChange={() => { setGenMethod(m); setGenLink(null); }}
                   />
                   {m === 'qris' ? 'QRIS' : 'Transfer BCA'}
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center gap-5 h-10">
+              {([['test-ebook-qris', 'Simplified 🇨🇳'], ['rahasia-huruf-mandarin-tw', 'Traditional 🇹🇼']] as const).map(([slug, label]) => (
+                <label key={slug} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                  <Checkbox
+                    checked={genSlug === slug}
+                    onCheckedChange={() => { setGenSlug(slug); setGenLink(null); }}
+                  />
+                  {label}
                 </label>
               ))}
             </div>
