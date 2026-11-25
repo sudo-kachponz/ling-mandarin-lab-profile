@@ -39,6 +39,7 @@ export default withJsonErrors(async function handler(req: VercelRequest, res: Ve
       amount?: number | string;
       method?: string;
       hasProof?: boolean;
+      productSlug?: string;
     };
     const { orderRef, action, note, phone } = body;
 
